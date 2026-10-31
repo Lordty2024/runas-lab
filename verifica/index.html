@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>RUNAS Verifica | Comunicación y ciudadanía digital</title>
+  <meta name="description" content="Taller interactivo de comunicación y ciudadanía digital para examinar noticias, fotografías y publicaciones de redes sociales.">
+  <style>
+    /* Estilos autocontenidos sin dependencias externas */
+    :root {
+      --bg: #fafaf9;
+      --card-bg: #ffffff;
+      --text: #1c1917;
+      --text-muted: #78716c;
+      --primary: #d97706;
+      --primary-hover: #b45309;
+      --accent: #f59e0b;
+      --border: #e7e5e4;
+      --success: #15803d;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --info: #0369a1;
+      --radius: 1rem;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1917;
+        --card-bg: #292524;
+        --text: #f5f5f4;
+        --text-muted: #a8a29e;
+        --border: #44403c;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding-bottom: 3rem;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
+    }
+    .brand-logo {
+      width: 2.5rem;
+      height: 2.5rem;
+      background: var(--primary);
+      color: #000;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.2rem;
+    }
+    .brand-title { font-size: 1.1rem; font-weight: 800; line-height: 1.1; }
+    .brand-sub { font-size: 0.75rem; color: var(--text-muted); }
+    .header-actions { display: flex; align-items: center; gap: 0.4rem; }
+    .btn {
+      padding: 0.5rem 0.85rem;
+      border-radius: 0.6rem;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s;
+    }
+    .btn:hover { background: rgba(0,0,0,0.05); }
+    .btn-primary {
+      background: var(--primary);
+      color: #000;
+      border-color: var(--primary);
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-dark {
+      background: #1c1917;
+      color: #ffffff;
+      border-color: #1c1917;
+    }
+    .container {
+      max-width: 960px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+    }
+    .banner-ficticio {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--primary);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .hero-card {
+      background: linear-gradient(135deg, #292524, #1c1917);
+      color: #fff;
+      padding: 2rem 1.5rem;
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+    .hero-tag {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--accent);
+      padding: 0.25rem 0.6rem;
+      border-radius: 2rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .hero-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 0.5rem; line-height: 1.1; }
+    .hero-desc { font-size: 1rem; color: #d6d3d1; margin-bottom: 1.25rem; max-width: 700px; }
+    .routes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .route-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .route-title { font-size: 1.15rem; font-weight: 800; margin: 0.5rem 0 0.25rem 0; }
+    .route-desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; }
+    .checklist-box {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 1.5rem;
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+    }
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .checklist-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 0.85rem;
+      border-radius: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .checklist-item b { display: block; margin-bottom: 0.25rem; color: var(--primary); }
+    .case-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .clue-chip {
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      background: var(--bg);
+    }
+    .clue-chip.active {
+      border-color: var(--primary);
+      background: rgba(245, 158, 11, 0.15);
+      font-weight: 600;
+    }
+    .verdict-btn {
+      width: 100%;
+      text-align: left;
+      padding: 0.75rem;
+      border-radius: 0.6rem;
+      border: 1px solid var(--border);
+      margin-bottom: 0.5rem;
+      background: var(--card-bg);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .verdict-btn.active {
+      border-color: var(--primary);
+      background: rgba(245, 158, 11, 0.2);
+      font-weight: 700;
+    }
+    .feedback-box {
+      background: #1c1917;
+      color: #fff;
+      padding: 1.25rem;
+      border-radius: var(--radius);
+      margin-top: 1.25rem;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      color: var(--text);
+      max-width: 600px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+    }
+    @media print {
+      body { background: #fff; color: #000; }
+      header, .btn, .modal, .no-print { display: none !important; }
+      .container { max-width: 100%; margin: 0; padding: 0; }
+      .hero-card, .case-container { box-shadow: none; border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand" onclick="navigateTo('home')">
+      <div class="brand-logo">RV</div>
+      <div>
+        <div class="brand-title">RUNAS Verifica</div>
+        <div class="brand-sub">Comunicación y ciudadanía digital</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn" onclick="openChecklistModal()">5 Preguntas</button>
+      <button class="btn" onclick="openFacilitatorModal()">Facilitador</button>
+      <button class="btn btn-primary" onclick="navigateTo('summary')">Carnet</button>
+    </div>
+  </header>
+
+  <main class="container" id="appRoot">
+    <!-- Contenido inyectado dinámicamente -->
+  </main>
+
+  <!-- Modal Lista de Verificación -->
+  <div class="modal" id="checklistModal" onclick="closeModalOnBg(event, 'checklistModal')">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-weight: 800;">Lista de Verificación RUNAS</h3>
+        <button class="btn" onclick="closeModal('checklistModal')">✕</button>
+      </div>
+      <div id="checklistItemsList"></div>
+    </div>
+  </div>
+
+  <!-- Modal Facilitador -->
+  <div class="modal" id="facilitatorModal" onclick="closeModalOnBg(event, 'facilitatorModal')">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-weight: 800;">Guía para Facilitadores (60 / 90 min)</h3>
+        <button class="btn" onclick="closeModal('facilitatorModal')">✕</button>
+      </div>
+      <div id="facilitatorContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // Datos integrados en el archivo único autocontenido
+    const ROUTES_DATA = [{"id":"noticias","title":"Ruta 1: Noticias","shortDescription":"Aprende a examinar medios digitales, evaluar titulares engañosos y contrastar con fuentes independientes.","badgeText":"Lectura crítica","iconName":"Newspaper","colorTheme":{"primary":"amber-600","bgBadge":"bg-amber-100 dark:bg-amber-950/50","textBadge":"text-amber-800 dark:text-amber-300","border":"border-amber-200 dark:border-amber-800/40","lightBg":"bg-amber-50/50 dark:bg-amber-950/20"},"lessons":[{"id":"n-les-1","stepNumber":1,"conceptName":"Fuente y Autoría","title":"¿Quién respalda lo que estás leyendo?","keyQuestion":"¿Tiene nombre y apellido o es un portal anónimo?","summary":"Un medio confiable se hace responsable de lo que publica: muestra quién escribe, quién dirige el portal y cómo contactarlos.","detailedExplanation":["Cuando leas un artículo digital, baja hasta el final o busca la sección \"¿Quiénes somos?\" o \"Directorio\". Si no encuentras nombres reales ni dirección, es una señal de alerta.","Cuidado con las URLs \"gemelas\": páginas creadas para parecerse a diarios o instituciones conocidas agregando palabras como \"-noticias\", \".live\" o extensiones raras.","Un autor o periodista profesional firma con su nombre y suele tener trayectoria verificable. El anonimato total facilita difundir rumores sin consecuencias."],"visualExample":{"goodCase":{"label":"Medio transparente","detail":"Artículo firmado por \"Mariana Quispe, periodista de investigación\". Portal con datos de contacto, aviso legal y fecha actualizada con hora exacta."},"alarmCase":{"label":"Página sospechosa","detail":"Publicado por \"Redacción Digital Anónima\" en la web \"el-peruano-informa.tk\". No hay teléfonos, dirección física ni equipo editorial identificable."}},"practicalActionTip":"Busca el nombre del autor en un buscador entre comillas (por ejemplo: \"Mariana Quispe periodista\") para comprobar si existe y qué otros trabajos ha publicado."},{"id":"n-les-2","stepNumber":2,"conceptName":"Titular vs. Contenido y Datos","title":"El anzuelo del titular (Clickbait)","keyQuestion":"¿El cuerpo de la noticia confirma lo que promete el titular?","summary":"Muchos titulares prometen catástrofes o curas milagrosas para ganar visitas, pero al leer el texto descubres que no dicen nada de eso.","detailedExplanation":["El titular está diseñado para captar tu atención en segundos. Muchas páginas usan titulares tramposos que exageran o tergiversan un hecho pequeño.","Revisa las citas: ¿Quién dijo exactamente qué? Comprueba si la cita está entrecomillada textualmente o si es solo la interpretación del que escribió.","Cuidado con las \"cifras flotantes\": Si dicen \"el 80% de la población está en riesgo\", busca de dónde sale esa cifra. ¿Un censo? ¿Un informe del INEI? ¿Un estudio universitario? Sin fuente, los números no tienen valor."],"visualExample":{"goodCase":{"label":"Titular preciso","detail":"\"Ministerio de Salud evalúa medidas preventivas ante aumento de resfríos por bajas temperaturas en la sierra sur.\""},"alarmCase":{"label":"Titular alarmista engañoso","detail":"\"¡COLAPSO INMINENTE! ¡GRAVE VIRUS AMENAZA A TODO EL PAÍS Y NADIE HACE NADA!\" (Al leer la nota, solo habla de un resfrío estacional habitual)."}},"practicalActionTip":"Nunca compartas una noticia habiendo leído únicamente el titular. Lee al menos los tres primeros párrafos para corroborar los datos."},{"id":"n-les-3","stepNumber":3,"conceptName":"La Regla del Contraste","title":"Buscar al menos 2 fuentes independientes","keyQuestion":"¿Alguien más lo está confirmando?","summary":"Si un acontecimiento de interés público es real, otros medios locales, nacionales o instituciones independientes también informarán sobre él.","detailedExplanation":["No te quedes con una sola versión. Si un hecho genera alarma o sorpresa, abre otra pestaña y busca las palabras clave en Google o en portales de noticias conocidos.","Distingue entre medios independientes y páginas que se copian entre sí: a veces diez blogs replican la misma cadena falsa palabra por palabra.","Si se trata de leyes, feriados o normas, acude siempre a los canales oficiales del Estado (.gob.pe), donde se publican las normativas vigentes."],"visualExample":{"goodCase":{"label":"Hecho contrastado","detail":"La noticia sobre la nueva carretera aparece en diarios regionales de Cusco, en el boletín del MTC y en una agencia de noticias acreditada."},"alarmCase":{"label":"Dato aislado sin confirmar","detail":"Solo un canal de Telegram y dos cuentas de Facebook no identificadas aseguran que mañana se cancelan las clases en todo el territorio nacional."}},"practicalActionTip":"Haz la prueba de las tres ventanas: abre el portal original, un buscador general y el portal de la institución vinculada al tema."}],"cases":[{"id":"caso-noticias-1","routeId":"noticias","level":"basico","levelLabel":"Nivel 1: Detección Básica","title":"La supuesta ordenanza secreta del jugo de maracuyá","subtitle":"Un titular llamativo sobre una supuesta prohibición en quioscos escolares.","caseTypeTag":"Portal de noticias digital ficticio","simulatedContext":{"platform":"web","senderName":"El Heraldo del Valle Digital","sourceDomain":"elheraldodelvalle-noticias.xyz","dateText":"Publicado hace 3 horas | Sección: Actualidad","headline":"¡Prohíben el consumo de jugo de maracuyá en todos los colegios por decreto misterioso!","leadText":"Una supuesta disposición habría alarmado a padres de familia de la provincia.","bodyParagraphs":["Fuentes cercanas al sector educativo afirman que desde este lunes ningún estudiante podrá llevar ni comprar refresco de maracuyá en los quioscos escolares de la región.","Según nos relató un padre de familia que prefirió mantener su nombre en reserva, \"un vecino le contó que en la reunión de delegados alguien comentó que el jugo provoca somnolencia extrema y por eso lo van a prohibir bajo multa severa\".","Hasta el momento no se ha presentado ningún documento con sello de la UGEL ni del Ministerio de Educación, pero la indignación de los comerciantes no se ha hecho esperar en las esquinas."],"quoteAuthor":"Vecino anónimo no identificado","quoteText":"\"Un conocido me dijo que en un colegio ya están decomisando las botellas...\""},"clues":[{"id":"n1-clue-1","title":"Dominio de internet sospechoso (.xyz)","description":"La web utiliza una terminación gratuita/económica (.xyz) y no cuenta con datos de razón social ni dirección.","locationLabel":"En la barra de dirección web","category":"fuente"},{"id":"n1-clue-2","title":"Cero evidencia documental","description":"El texto admite expresamente que no existe ningún decreto, oficio ni número de resolución de la UGEL.","locationLabel":"En el tercer párrafo","category":"evidencia"},{"id":"n1-clue-3","title":"Testimonio de tercera mano (\"el vecino de un amigo\")","description":"La única \"fuente\" citada es un rumor no verificado de una persona que no da su nombre.","locationLabel":"En la cita del segundo párrafo","category":"fuente"},{"id":"n1-clue-4","title":"Titular que afirma lo que el texto no prueba","description":"El titular da por hecho la prohibición con signos de exclamación, pero el cuerpo dice que \"nadie ha presentado documentos\".","locationLabel":"En el encabezado principal","category":"emocion"}],"correctVerdict":"sin_evidencia","verdictRationale":"El caso presenta una afirmación de gran impacto sin aportar ningún documento oficial, número de resolución o vocero identificado. Se sustenta únicamente en rumores de tercera mano.","whatToLookFor":["¿Hay número de ordenanza, decreto o resolución ministerial?","¿Quién firma la nota informativa?","¿El portal tiene trayectoria conocida o un dominio genérico?"],"realWorldMethodTip":"Si una supuesta norma prohíbe alimentos o cambia reglas escolares en tu región, revisa el portal oficial de la UGEL correspondiente o del MINEDU. Las normas siempre tienen número y firma.","searchAdvice":"Busca en Google: resolución ugel maracuya prohibición alimentos escolares. Si no aparece en fuentes oficiales ni en medios periodísticos formales, no tiene base."},{"id":"caso-noticias-2","routeId":"noticias","level":"intermedio","levelLabel":"Nivel 2: Detección Intermedia","title":"El corte de energía imprevisto y los rumores en desarrollo","subtitle":"Una situación real confusa donde circulan versiones contradictorias.","caseTypeTag":"Boletín digital de noticias locales ficticio","simulatedContext":{"platform":"web","senderName":"Noticias San Jerónimo Hoy","sourceDomain":"sanjeronimo-hoy.pe","dateText":"Hoy 11:42 a.m. (Noticia en desarrollo)","headline":"Corte de energía afecta al distrito: Vecinos reportan transformador averiado, mientras brigadas inspeccionan la subestación","leadText":"El suministro eléctrico se interrumpió a las 11:15 a.m. en varios sectores del distrito.","bodyParagraphs":["Cientos de hogares y comercios de San Jerónimo permanecen sin fluido eléctrico desde hace media hora. En redes sociales algunos usuarios afirman que la luz no regresará hasta mañana por la noche, asegurando que un rayo destruyó la central principal.","Sin embargo, el vocero de serenazgo distrital informó por radio que una cuadrilla de la empresa eléctrica ya llegó al cruce de la avenida principal para revisar una sobrecarga en la línea secundaria.","La empresa distribuidora de energía aún no ha emitido su comunicado oficial con el diagnóstico técnico ni con la hora estimada de reposición del servicio."],"quoteAuthor":"Jefe de guardia de serenazgo distrital","quoteText":"\"Nuestros agentes confirman que los técnicos están trabajando en la zona, pero el tiempo exacto de reparación corresponde informarlo a la empresa de luz.\""},"clues":[{"id":"n2-clue-1","title":"Etiqueta \"Noticia en desarrollo\"","description":"El hecho ocurrió hace pocos minutos y la información técnica aún no está consolidada.","locationLabel":"Bajo el titular","category":"contexto"},{"id":"n2-clue-2","title":"Falta el informe técnico oficial de la empresa","description":"La entidad responsable del servicio aún no publica el diagnóstico ni el tiempo estimado de reposición.","locationLabel":"En el tercer párrafo","category":"evidencia"},{"id":"n2-clue-3","title":"Rumores virales catastróficos sin confirmar","description":"En redes afirman que \"la luz no vuelve hasta mañana\", pero los técnicos apenas están diagnosticando el problema.","locationLabel":"En el primer párrafo","category":"emocion"}],"correctVerdict":"no_puedo_saberlo","verdictRationale":"En situaciones en desarrollo, no se puede afirmar con certeza cuánto durará el corte ni cuál fue la avería exacta hasta que la empresa responsable publique su reporte técnico. La actitud ciudadana correcta es la prudencia: no viralizar rumores de \"apagón de varios días\" hasta tener el dato oficial.","whatToLookFor":["¿El hecho está ocurriendo en este mismo instante?","¿La entidad responsable ya dio un parte técnico o recién está revisando?","¿Hay versiones apresuradas en redes sociales sin sustento técnico?"],"realWorldMethodTip":"Durante emergencias o averías en servicios básicos, espera el comunicado oficial de la empresa prestadora (con sello y hora). No reenvíes audios ni capturas de \"se quemó todo\".","searchAdvice":"Revisa los canales oficiales verificados de la distribuidora eléctrica de tu ciudad o comunícate con su línea de atención telefónica de emergencias."},{"id":"caso-noticias-3","routeId":"noticias","level":"avanzado","levelLabel":"Nivel 3: Análisis Avanzado","title":"El supuesto cobro obligatorio para mototaxistas","subtitle":"Un medio digital recicla una propuesta archivada de hace años presentándola como ley vigente.","caseTypeTag":"Blog de actualidad regional ficticio","simulatedContext":{"platform":"web","senderName":"Enfoque Regional Norte","sourceDomain":"enfoqueregional-peru.com","dateText":"Actualizado hoy | Autor: Juan Carlos M.","headline":"¡Golpe al bolsillo! Mototaxistas deberán pagar 150 soles mensuales por nuevo certificado técnico obligatorio desde mañana","leadText":"Una supuesta nueva directiva impondría cobros severos a los transportistas de vehículos menores.","bodyParagraphs":["Gran malestar ha causado la revelación de un proyecto que exigiría a todos los conductores de mototaxis el pago de 150 soles por concepto de inspección ambiental computarizada a partir del primer día del próximo mes.","Como sustento, la nota cita textualmente declaraciones del exregidor Pedro Salazar: \"Es imprescindible que los vehículos pasen pruebas de emisión de gases para cuidar el aire de la ciudad\". Lo que el artículo no menciona es que esas declaraciones corresponden a un debate preliminar del año 2018 que fue desestimado y archivado.","El gremio formal de transportistas de la provincia aclaró que no existe ninguna ordenanza aprobada al respecto en el concejo municipal actual."],"quoteAuthor":"Exregidor Pedro Salazar (Declaración de 2018)","quoteText":"\"Es imprescindible que los vehículos pasen pruebas de emisión...\""},"clues":[{"id":"n3-clue-1","title":"Reciclaje de una propuesta archivada","description":"Usa una declaración real pero de hace 6 años (2018), sacándola de contexto temporal para crear zozobra hoy.","locationLabel":"En el segundo párrafo","category":"contexto"},{"id":"n3-clue-2","title":"Desmentido del gremio oficial","description":"Los propios transportistas y el concejo municipal confirman que no existe ninguna ordenanza vigente que ordene ese cobro.","locationLabel":"En el tercer párrafo","category":"contraste"},{"id":"n3-clue-3","title":"Titular que apela al enojo económico (\"¡Golpe al bolsillo!\")","description":"El lenguaje busca provocar indignación inmediata antes de que el lector investigue la fecha de la norma.","locationLabel":"En el titular inicial","category":"emocion"}],"correctVerdict":"enganoso","verdictRationale":"El contenido es engañoso porque toma un fragmento real (la opinión de un exfuncionario de 2018) pero oculta que el proyecto fue archivado hace años, presentándolo como si entrara en vigencia mañana para generar clics e indignación.","whatToLookFor":["¿La declaración citada es reciente o fue dicha en otro contexto?","¿La ordenanza municipal ha sido publicada en el portal oficial de la comuna?","¿Los gremios involucrados han sido consultados formalmente?"],"realWorldMethodTip":"Cuando leas que se creará un cobro o impuesto nuevo, busca la ordenanza en el diario oficial o en el portal de transparencia de la municipalidad. Un proyecto archivado no tiene fuerza de ley.","searchAdvice":"Busca el texto exacto de la ordenanza o el nombre del funcionario junto al año (\"Pedro Salazar mototaxis ordenanza\") para ver de qué fecha data la propuesta original."}]},{"id":"fotografias","title":"Ruta 2: Fotografías","shortDescription":"Descubre cómo verificar imágenes fuera de contexto, detectar ediciones y reconocer fotos creadas con inteligencia artificial.","badgeText":"Análisis visual","iconName":"Image","colorTheme":{"primary":"emerald-600","bgBadge":"bg-emerald-100 dark:bg-emerald-950/50","textBadge":"text-emerald-800 dark:text-emerald-300","border":"border-emerald-200 dark:border-emerald-800/40","lightBg":"bg-emerald-50/50 dark:bg-emerald-950/20"},"lessons":[{"id":"f-les-1","stepNumber":1,"conceptName":"Contexto y Fecha de Origen","title":"La foto puede ser real, pero la historia falsa","keyQuestion":"¿Esa imagen fue tomada en el lugar y fecha que dicen?","summary":"La forma más frecuente de engaño visual no es usar Photoshop, sino tomar una foto auténtica de otro país o de hace 5 años y cambiarle la leyenda.","detailedExplanation":["Muchas imágenes compartidas durante inundaciones, marchas o desastres son fotografías auténticas, pero tomadas en otro departamento o durante un suceso de hace una década.","Fíjate en las pistas del entorno: carteles con nombres de calles, marcas de autos, patentes de vehículos, enchufes eléctricos, uniforme de la policía o vestimenta de los transeúntes.","La vegetación y el clima son excelentes delatores: si dicen que nevó en la selva baja tropical pero los edificios son de estilo nórdico, algo no cuadra."],"visualExample":{"goodCase":{"label":"Foto con contexto verificable","detail":"Foto del río Rímac con fecha grabada por el fotógrafo, referencias geográficas claras y coincidencia con el caudal reportado por SENAMHI esa misma semana."},"alarmCase":{"label":"Foto reciclada fuera de contexto","detail":"Foto de un huaico en Asia (año 2015) compartida en WhatsApp asegurando que \"acaba de ocurrir en Chosica hace 10 minutos\"."}},"practicalActionTip":"Haz zoom en detalles secundarios: letreros de tiendas, placas de autos, logos en camisetas o números de teléfono de anuncios en postes."},{"id":"f-les-2","stepNumber":2,"conceptName":"Búsqueda Inversa de Imágenes","title":"Cómo rastrear el pasado de una fotografía","keyQuestion":"¿Dónde más apareció esta imagen en internet?","summary":"Herramientas gratuitas como Google Lens o TinEye te permiten subir una foto o captura para descubrir cuándo apareció por primera vez en la web.","detailedExplanation":["La búsqueda inversa no busca palabras, sino la composición visual, colores y formas de la imagen en millones de páginas.","Al hacer búsqueda inversa, busca el resultado con la fecha más antigua. Si una foto que dicen que es \"de ayer\" ya aparecía en un blog en 2017, queda demostrado el engaño.","En el celular puedes usar Google Lens manteniendo presionada la imagen o subiendo una captura de pantalla."],"visualExample":{"goodCase":{"label":"Rastreo exitoso","detail":"Al subir la foto a Google Lens, descubres que la imagen original pertenece a un fotoperiodista que cubrió una nevada en Bariloche en el año 2019."},"alarmCase":{"label":"Creerle a la captura sin rastrear","detail":"Aceptar como verdadero un cartel que dice \"Nevada en Iquitos\" solo porque la foto luce impresionante."}},"practicalActionTip":"En tu celular: toma una captura de la foto sospechosa, abre la app de Google o Lens, presiona el icono de la cámara y selecciona la captura."},{"id":"f-les-3","stepNumber":3,"conceptName":"Imágenes generadas por IA","title":"Reconocer fotos sintéticas y manipulaciones","keyQuestion":"¿Esta imagen fue capturada por una cámara o generada por un algoritmo?","summary":"Los generadores de imágenes por Inteligencia Artificial son cada vez más avanzados, pero aún dejan huellas características que el ojo atento puede detectar.","detailedExplanation":["Examina las extremidades y manos: los algoritmos frecuentemente dibujan dedos fusionados, articulaciones imposibles o manos con seis dedos.","Letras y carteles de fondo: la IA suele generar símbolos deformes que parecen letras pero que no se pueden leer en ningún idioma conocido.","Texturas de piel y reflejos: las personas creadas con IA suelen lucir una piel excesivamente lisa como muñecos de cera, con brillos en los ojos que apuntan a fuentes de luz opuestas.","Distingue siempre: ¿Es una foto editada, es generada por IA o es una foto 100% real pero sacada de contexto?"],"visualExample":{"goodCase":{"label":"Fotografía genuina","detail":"Textura natural en la piel con poros e imperfecciones, texto legible en los letreros lejanos, sombras coherentes con la posición del sol."},"alarmCase":{"label":"Imagen generada por IA","detail":"Carteles con caracteres ilegibles y borrosos en el fondo, dedos de la mano con seis falanges, dientes perfectamente idénticos y piel plástica."}},"practicalActionTip":"Fíjate en los detalles que la IA no suele calcular bien: reflejos en anteojos, cadenas al cuello que desaparecen en la ropa y simetría de pendientes."}],"cases":[{"id":"caso-fotos-1","routeId":"fotografias","level":"basico","levelLabel":"Nivel 1: Detección Básica","title":"La supuesta \"nevada histórica\" en la selva baja","subtitle":"Una imagen invernal atribuida insólitamente a una plaza de Pucallpa.","caseTypeTag":"Publicación viral con fotografía ficticia","simulatedContext":{"platform":"facebook","senderName":"Clima Extremo y Noticias del Mundo","dateText":"Compartido hace 45 minutos","headline":"¡INSÓLITO! Se registra nevada histórica sobre la plaza principal de Pucallpa por primera vez en la historia.","bodyParagraphs":["Los pobladores quedaron perplejos esta madrugada tras el congelamiento repentino de la plaza. La nieve cubrió bancas y árboles con más de 10 centímetros de hielo.","Científicos locales no tienen explicación para este fenómeno meteorológico nunca antes visto en la Amazonía peruana."],"imageUrl":"simulated_snow_palm","imageDescription":"Fotografía que muestra una gran plaza colonial con pinos y araucarias cubierta por una espesa capa de nieve blanca, con turistas abrigados con bufandas gruesas y arquitectura típica de montaña andina o patagónica.","imageCluesNote":"En la foto se aprecian pinos de montaña, arquitectura de tejas inclinadas para nieve y letreros de fondo con nombres en alemán o patagónicos."},"clues":[{"id":"f1-clue-1","title":"Inconsistencia botánica y geográfica evidente","description":"La plaza de la fotografía muestra coníferas y pinos de alta montaña, vegetación imposible de encontrar en la selva baja de Pucallpa.","locationLabel":"En la vegetación del fondo","category":"contexto"},{"id":"f1-clue-2","title":"Arquitectura diseñada para nieve","description":"Las casas tienen techos de doble vertiente empinada propios de zonas nevadas del sur del continente, no de la arquitectura amazónica.","locationLabel":"En los tejados visibles","category":"evidencia"},{"id":"f1-clue-3","title":"Imposibilidad climática según SENAMHI","description":"En la selva baja ocurren \"friajes\" con vientos del sur y temperaturas que bajan a 14°C, pero físicamente no puede caer nieve con esa altitud y presión.","locationLabel":"En los datos meteorológicos","category":"contraste"}],"correctVerdict":"enganoso","verdictRationale":"La imagen muestra un lugar real cubierto de nieve (probablemente una ciudad andina del sur o la Patagonia), pero ha sido falsamente atribuida a Pucallpa. Es una imagen real sacada completamente de contexto geográfico para sorprender a usuarios desprevenidos.","whatToLookFor":["¿La vegetación y las especies de árboles coinciden con la región?","¿El estilo arquitectónico es característico de esa ciudad?","¿Qué indica el organismo oficial de meteorología (SENAMHI)?"],"realWorldMethodTip":"Usa Google Lens con la foto. Encontrarás la misma postal tomada años antes en Bariloche o el sur andino.","searchAdvice":"En Google Lens o TinEye: sube la foto. Si no tienes la herramienta a mano, busca \"nevada Pucallpa senamhi hoy\" para ver si existe algún reporte meteorológico real."},{"id":"caso-fotos-2","routeId":"fotografias","level":"intermedio","levelLabel":"Nivel 2: Detección Intermedia","title":"El supuesto \"puente de cristal colgante\" en el Cañón del Colca","subtitle":"Una imagen espectacular de ingeniería que genera dudas al mirarla de cerca.","caseTypeTag":"Fotografía promocional en Instagram ficticia","simulatedContext":{"platform":"instagram","senderName":"@turismo_aventuras_magicas","senderHandle":"@turismo_aventuras_magicas","dateText":"Hace 2 días","headline":"¡Inauguran el puente colgante de cristal más alto de Sudamérica sobre el Cañón del Colca!","bodyParagraphs":["¡Orgullo peruano! Esta semana abrió sus puertas esta megaobra de vidrio templado a más de 3,000 metros de altura. Miles de turistas ya caminan sobre el abismo.","Comparte para que el mundo conozca esta maravilla nacional. ¿Te atreverías a cruzarlo?"],"imageUrl":"simulated_ai_bridge","imageDescription":"Imagen de un puente suspendido sobre un desfiladero rocoso impresionante. El suelo es de cristal transparente pero las barandas tienen cables que no se conectan a ninguna base; al fondo hay un letrero con letras deformes que no corresponden al español.","imageCluesNote":"Las personas sobre el puente tienen extremidades con proporciones extrañas: una persona tiene tres piernas visibles y otra camina con pies sin apoyar en el piso. El letrero dice \"COLCCKAA GLLSS\" con letras derretidas."},"clues":[{"id":"f2-clue-1","title":"Letras deformes estilo IA en el cartel","description":"El cartel de bienvenida contiene caracteres que imitan letras pero no forman palabras en español ni quechua (\"COLCCKAA GLLSS\"), síntoma clásico de imágenes generadas por IA.","locationLabel":"En el letrero de entrada al puente","category":"evidencia"},{"id":"f2-clue-2","title":"Figuras humanas con extremidades deformadas","description":"Al hacer zoom en las personas que cruzan el puente, se aprecian piernas duplicadas y rostros borrosos sin rasgos definidos.","locationLabel":"En los turistas sobre la pasarela","category":"evidencia"},{"id":"f2-clue-3","title":"Cables flotantes sin anclaje de ingeniería","description":"Los tensores del puente terminan flotando en el aire sin llegar a ningún pilar de soporte o roca firme.","locationLabel":"En la estructura de cables","category":"evidencia"},{"id":"f2-clue-4","title":"Ausencia total de registro en MINCETUR","description":"Una megaobra turística de esa magnitud tendría cobertura en todos los canales oficiales de turismo y diarios del país.","locationLabel":"En la verificación institucional","category":"contraste"}],"correctVerdict":"enganoso","verdictRationale":"No es una fotografía real: es una imagen generada mediante Inteligencia Artificial (con claros fallos anatómicos, tipografía incoherente y física imposible) que se presenta falsamente como una atracción turística recién inaugurada.","whatToLookFor":["¿Los textos en carteles se leen con claridad o parecen garabatos?","¿Las manos, pies y rostros de las personas tienen proporciones lógicas?","¿Los cables y estructuras respetan las leyes de la física o flotan en la nada?"],"realWorldMethodTip":"Haz zoom al 200% en las personas secundarias de la imagen y en los carteles. Si la tipografía es ininteligible y los dedos están fundidos, fue hecha con IA.","searchAdvice":"Busca en Google Noticias: inauguración puente de cristal cañón del colca mincetur. Si ninguna institución ni medio formal lo menciona, no existe en la realidad."},{"id":"caso-fotos-3","routeId":"fotografias","level":"avanzado","levelLabel":"Nivel 3: Análisis Avanzado","title":"La cobertura escolar de la feria regional de robótica","subtitle":"Un registro fotográfico estudiantil con autor identificado y contexto claro.","caseTypeTag":"Fotoperiodismo escolar verificado ficticio","simulatedContext":{"platform":"web","senderName":"Gaceta Escolar Regional - Taller de Periodismo","dateText":"Ayer a las 4:30 p.m. | Foto: Luis Condori (Club de Fotografía Escolar)","headline":"Estudiantes del colegio San Martín obtienen primer puesto en la feria provincial de robótica educativa","leadText":"El equipo de tercer año de secundaria presentó un prototipo de riego automatizado con sensores solares.","bodyParagraphs":["En la imagen, los cuatro integrantes del equipo posan junto a su docente asesor en el patio central del colegio, sosteniendo el banderín distintivo del certamen.","La fotografía cuenta con iluminación natural de media tarde, sombras coherentes con el patio del colegio y muestra de fondo el letrero oficial de la UGEL provincial fechado en octubre de este año.","La nota incluye enlace al acta oficial de premiación publicada en el portal educativo regional y declaraciones de la directora del plantel."],"imageUrl":"simulated_school_robotics","imageDescription":"Foto nítida de cuatro escolares con uniforme formal mostrando un prototipo con placa electrónica y cables organizados. El fondo muestra las gradas del colegio con fecha y pancarta institucional clara.","imageCluesNote":"Las sombras en el suelo coinciden con la posición del sol. Las credenciales de los estudiantes muestran sus nombres y el colegio."},"clues":[{"id":"f3-clue-1","title":"Autor de la fotografía debidamente identificado","description":"La imagen lleva la firma de Luis Condori del club de fotografía escolar, con hora y fecha de captura.","locationLabel":"En el pie de foto","category":"fuente"},{"id":"f3-clue-2","title":"Detalles visuales naturales y coherentes","description":"Sombras consistentes, letreros legibles con fechas reales y credenciales estudiantiles visibles sin ninguna alteración digital.","locationLabel":"En el entorno de la fotografía","category":"evidencia"},{"id":"f3-clue-3","title":"Contraste con acta institucional oficial","description":"El evento se respalda con el acta de premiación publicada por la UGEL y confirmada por la dirección del colegio.","locationLabel":"En las fuentes citadas","category":"contraste"}],"correctVerdict":"verificado","verdictRationale":"La fotografía es auténtica y cuenta con respaldo sólido: tiene autor conocido, contexto temporal y geográfico claro, detalles físicos naturales y coincidencia plena con documentos institucionales independientes.","whatToLookFor":["¿La foto tiene firma de autor o fotógrafo?","¿Los carteles, fechas y sombras son coherentes y nítidos?","¿El acontecimiento se puede contrastar con documentos institucionales?"],"realWorldMethodTip":"Verificar también sirve para reconocer el trabajo bien hecho y las noticias verdaderas. No todo en internet es falso; el método nos enseña a validar con evidencia.","searchAdvice":"Verifica los nombres en las redes oficiales de la institución educativa o en la página de actividades de la UGEL."}]},{"id":"redes","title":"Ruta 3: Publicaciones en Redes","shortDescription":"Aprende a identificar cuentas sospechosas, cadenas de mensajería alarmistas y afirmaciones sobre salud sin base científica.","badgeText":"Ciudadanía digital","iconName":"Share2","colorTheme":{"primary":"rose-600","bgBadge":"bg-rose-100 dark:bg-rose-950/50","textBadge":"text-rose-800 dark:text-rose-300","border":"border-rose-200 dark:border-rose-800/40","lightBg":"bg-rose-50/50 dark:bg-rose-950/20"},"lessons":[{"id":"r-les-1","stepNumber":1,"conceptName":"Cuentas Sospechosas y Perfiles Imitadores","title":"El truco de los nombres parecidos","keyQuestion":"¿Es la cuenta oficial auténtica o una copia?","summary":"Quienes desinforman suelen crear perfiles con fotos y nombres muy parecidos a los de municipalidades, ministerios o medios para engañar a primera vista.","detailedExplanation":["Revisa el usuario exacto (el @handle): a menudo agregan una letra extra, un guión bajo o reemplazan una \"l\" por un \"1\" (por ejemplo: @Minsa_Peruu o @Alcaldia_Oficiall).","Mira la fecha de creación: una cuenta que dice ser de una institución con décadas de historia pero fue creada hace solo dos semanas es casi con seguridad falsa.","Revisa las publicaciones anteriores: los perfiles falsos suelen tener muy pocos posts, sin interacción genuina o creados únicamente para viralizar un contenido polémico."],"visualExample":{"goodCase":{"label":"Canal oficial comprobado","detail":"Cuenta con enlace verificado desde la página web principal del Estado (.gob.pe), con historial de publicaciones de varios años e información de contacto oficial."},"alarmCase":{"label":"Cuenta imitadora clonada","detail":"Usuario \"@Sedapal_Emergencias_Oficial1\". Cuenta creada este mes con 12 seguidores, sin biografía y publicando avisos de corte con errores ortográficos."}},"practicalActionTip":"Para comprobar si una cuenta es oficial, no la busques dentro de la red social: entra a la web oficial del organismo (ejemplo: www.gob.pe) y pulsa en sus iconos oficiales de redes sociales."},{"id":"r-les-2","stepNumber":2,"conceptName":"Urgencia y Manipulación Emocional","title":"Cuando quieren que compartas sin pensar","keyQuestion":"¿El mensaje te provoca miedo, enojo o pánico instantáneo?","summary":"Los mensajes engañosos casi siempre apelan a emociones extremas para bloquear tu capacidad de razonar con calma antes de presionar \"compartir\".","detailedExplanation":["Fórmulas de urgencia clásicas: \"¡COMPARTIR ANTES DE QUE LO BORREN!\", \"¡EL GOBIERNO NO QUIERE QUE SEPAS ESTO!\", \"¡MÁXIMA DIFUSIÓN URGENTE!\".","Si un contenido te causa tanta rabia o miedo que sientes la necesidad incontrolable de enviárselo a tus grupos de chat, esa es precisamente la señal de que debes hacer una pausa.","Quienes diseñan desinformación saben que una persona asustada o indignada no se detiene a contrastar fuentes."],"visualExample":{"goodCase":{"label":"Comunicación ciudadana serena","detail":"\"Defensa Civil recomienda tener lista la mochila para emergencias y seguir los canales oficiales ante sismos.\""},"alarmCase":{"label":"Mensaje alarmista manipulador","detail":"\"¡¡¡ALERTA MÁXIMA A TODA LA POBLACIÓN!!! Mañana habrá un megaterremoto a las 3:00 a.m. ¡Avísale a todos tus seres queridos ya!\""}},"practicalActionTip":"Aplica la regla de los 60 segundos de RUNAS: cuando un mensaje te cause sobresalto, respira, deja el teléfono sobre la mesa durante un minuto y hazte las 5 preguntas antes de tocar la pantalla."},{"id":"r-les-3","stepNumber":3,"conceptName":"Cadenas de Chat y Fórmulas Milagrosas","title":"Audios anónimos y cifras sin respaldo","keyQuestion":"¿Quién es \"el amigo de un médico\" que grabó el audio?","summary":"Las cadenas de mensajería instantánea se propagan con rapidez porque vienen de personas queridas (familiares, amigos) que las reenvían de buena fe creyendo que ayudan.","detailedExplanation":["Etiqueta \"Reenviado muchas veces\": indica que el mensaje ha pasado por tantas manos que el emisor original es completamente desconocido.","Los audios anónimos: \"Hola familia, les mando este audio porque mi cuñado que es comandante/médico me acaba de avisar en secreto...\". Nunca hay nombres completos ni cargos reales comprobables.","Falsas curas de salud: prometen curar enfermedades graves (diabetes, asma, cáncer) con plantas comunes o brebajes milagrosos asegurando que \"la ciencia lo oculta\". Jugar con la salud ajena es muy peligroso."],"visualExample":{"goodCase":{"label":"Orientación médica respaldada","detail":"Recomendación del Colegio Médico o de la OMS con cita a ensayos clínicos publicados en revistas científicas revisadas por pares."},"alarmCase":{"label":"Cadena de audio milagrosa","detail":"\"Toma agua hervida con cáscara de plátano tres veces al día para erradicar cualquier infección en 24 horas. ¡Pásalo a todos tus contactos!\""}},"practicalActionTip":"Si un familiar te envía una cadena de este tipo, no lo juzgues ni lo ataques: agradécele con cariño su intención de cuidar a la familia y dile con respeto: \"¿Sabes de qué fecha es? Vamos a buscar si en la página del Minsa dicen algo al respecto\"."}],"cases":[{"id":"caso-redes-1","routeId":"redes","level":"basico","levelLabel":"Nivel 1: Detección Básica","title":"La supuesta fumigación aérea nocturna con helicópteros","subtitle":"Una cadena clásica de mensajería que reaparece periódicamente.","caseTypeTag":"Mensaje de chat en cadena ficticio","simulatedContext":{"platform":"whatsapp","senderName":"Grupo Familiar / Vecinal","dateText":"Recibido hoy a las 8:15 p.m.","forwardedManyTimes":true,"bodyParagraphs":["¡¡¡ATENCIÓN URGENTE A TODOS LOS VECINOS!!!","Esta noche a partir de las 11:45 p.m. y hasta las 4:00 a.m. pasarán helicópteros militares sobrevolando toda la ciudad para rociar una sustancia desinfectante preventiva especial desde el aire.","Por favor cierren todas las puertas y ventanas, no dejen ropa colgada afuera y metan a sus mascotas. La sustancia es tóxica para las vías respiratorias si se inhala directamente.","PÁSALE ESTE MENSAJE A TODA TU FAMILIA Y AMIGOS AHORA MISMO ANTES DE QUE SE SATURAREN LAS REDES."]},"clues":[{"id":"r1-clue-1","title":"Etiqueta \"Reenviado muchas veces\"","description":"Muestra que el texto es una cadena masiva que circula sin autor rastreable.","locationLabel":"En la cabecera del mensaje","category":"fuente"},{"id":"r1-clue-2","title":"Falta total de emisor institucional","description":"No menciona qué ministerio, alcaldía o fuerza armada realizaría dicha supuesta operación.","locationLabel":"En el contenido del texto","category":"evidencia"},{"id":"r1-clue-3","title":"Táctica de urgencia y pánico","description":"Uso de signos de exclamación triples (¡¡¡), mayúsculas sostenidas y exigencia de compartir de inmediato.","locationLabel":"En el encabezado y cierre","category":"emocion"},{"id":"r1-clue-4","title":"Imposibilidad operativa y contradicción sanitaria","description":"Ninguna entidad de salud fumiga ciudades enteras desde helicópteros por ser ineficiente y peligroso para la población.","locationLabel":"En la lógica del procedimiento","category":"contraste"}],"correctVerdict":"sin_evidencia","verdictRationale":"Es una cadena falsa clásica sin ningún tipo de evidencia ni respaldo oficial. Carece de firma, utiliza mayúsculas para generar terror psicológico e insta a compartir con urgencia sin aportar una sola prueba.","whatToLookFor":["¿Lleva la etiqueta \"Reenviado muchas veces\"?","¿Alguna institución oficial ha emitido un comunicado sobre fumigaciones aéreas?","¿El texto te exige reenviar con desesperación a todos tus contactos?"],"realWorldMethodTip":"Esta cadena sobre helicópteros ha circulado en más de 10 países con variaciones mínimas de texto desde hace años. Nunca ha sido real.","searchAdvice":"Busca en Google: cadena whatsapp fumigación helicópteros militar desinfectante. Encontrarás decenas de desmentidos de agencias de verificación."},{"id":"caso-redes-2","routeId":"redes","level":"intermedio","levelLabel":"Nivel 2: Detección Intermedia","title":"El falso aviso de corte masivo de agua por 10 días","subtitle":"Una cuenta clonada con un ligero error en el nombre busca generar histeria colectiva.","caseTypeTag":"Publicación en red social con perfil clonado ficticio","simulatedContext":{"platform":"x","senderName":"Servicio de Agua Potable Oficiall","senderHandle":"@Agua_Potable_Oficiall","dateText":"Publicado hace 1 hora · Cuenta creada en Octubre de 2026","headline":"COMUNICADO DE EMERGENCIA N° 402","bodyParagraphs":["Se informa a la colectividad que debido a la rotura imprevista de la tubería matriz principal, se suspenderá el servicio de agua potable en el 95% de la ciudad por un lapso continuo de 10 DÍAS CALENDARIO a partir de las 6:00 p.m. de hoy.","Se insta a los ciudadanos a almacenar toda el agua que puedan de inmediato y acudir a los reservorios con recipientes antes de que se agoten las reservas.","Disculpen las molestias ocasionadas por esta catástrofe hidráulica."],"metrics":{"retweets":"3.4K","likes":"1.2K","views":"45.8K"},"fakeComments":[{"user":"VecinaRosa","text":"¡Qué barbaridad! Corro al mercado a comprar bidones antes de que suban de precio.","timeAgo":"hace 40 min"},{"user":"Pedro_C","text":"Esperen, ¿por qué la cuenta tiene doble \"l\" al final? Revisen la página web oficial primero.","timeAgo":"hace 25 min"},{"user":"CarlosTransporte","text":"Ya hay colas de 2 cuadras en la tienda. No sé si creer esto.","timeAgo":"hace 10 min"}]},"clues":[{"id":"r2-clue-1","title":"Nombre de usuario clonado (@...Oficiall)","description":"El handle de la cuenta tiene dos \"l\" al final (\"Oficiall\"), un truco típico para suplantar identidades institucionales.","locationLabel":"En el nombre de usuario (@handle)","category":"fuente"},{"id":"r2-clue-2","title":"Cuenta creada recién este mes","description":"Una empresa pública de agua de una ciudad tiene años de presencia en redes, no un perfil creado hace pocas semanas.","locationLabel":"En la fecha de creación del perfil","category":"fuente"},{"id":"r2-clue-3","title":"Cifra y plazo inverosímiles (10 días al 95%)","description":"Un corte de tal magnitud paralizaría hospitales y colegios; requiere declaratoria de emergencia gubernamental.","locationLabel":"En la gravedad del aviso","category":"evidencia"},{"id":"r2-clue-4","title":"Silencio en los canales reales de la empresa","description":"En el portal web oficial y en los medios periodísticos no existe ningún comunicado que anuncie semejante corte.","locationLabel":"En el contraste con canales oficiales","category":"contraste"}],"correctVerdict":"enganoso","verdictRationale":"Se trata de una cuenta imitadora (con un error ortográfico en el usuario: \"Oficiall\") que busca generar pánico y compras desesperadas de bidones de agua mediante un comunicado falso.","whatToLookFor":["¿El nombre de usuario contiene letras duplicadas o números raros?","¿Cuándo fue creada la cuenta que emite la alerta?","¿El comunicado figura en la página web oficial de la empresa de agua?"],"realWorldMethodTip":"Cuando leas un aviso de corte de agua o luz, nunca te fíes de una captura o de un tuit suelto. Ingresa directamente a la página web institucional de la empresa de servicios de tu localidad.","searchAdvice":"Comprueba el handle oficial buscando la empresa en www.gob.pe o revisando los avisos en diarios locales."},{"id":"caso-redes-3","routeId":"redes","level":"avanzado","levelLabel":"Nivel 3: Análisis Avanzado","title":"El supuesto \"té milagroso de cáscara de tuna\" contra el asma","subtitle":"Un video viral con música emotiva que promete curaciones sin medicina.","caseTypeTag":"Publicación viral sobre salud y medicina natural ficticia","simulatedContext":{"platform":"facebook","senderName":"Salud y Remedios Ancestrales Milagro","dateText":"Publicado hace 3 días","headline":"¡BOMBAZO MÉDICO! Científico disidente revela que hervir cáscaras de tuna roja con kión cura el asma bronquial en solo 48 horas","bodyParagraphs":["¡Lo que las grandes corporaciones farmacéuticas y los médicos tradicionales no quieren que sepas porque se les acaba el negocio de los inhaladores!","Un brebaje 100% natural que disuelve las flemas y limpia los bronquios para siempre. Mi tía de 68 años dejó todos sus medicamentos en dos días gracias a esta receta bendita.","Si quieres apoyar la difusión de la medicina libre, comparte este post antes de que los laboratorios nos cierren la página. Además, tenemos frascos concentrados listos para enviar por delivery al WhatsApp que figura en nuestro perfil."],"metrics":{"shares":"18.9K","likes":"9.4K"},"fakeComments":[{"user":"SoniaM","text":"¿Dónde consigo la tuna roja? Mi hijo sufre mucho con el inhalador y quiero probar.","timeAgo":"hace 1 día"},{"user":"Dr_Mendoza","text":"CUIDADO: El asma es una enfermedad inflamatoria crónica de las vías respiratorias. Dejar el tratamiento médico por un remedio casero puede ocasionar un paro respiratorio grave.","timeAgo":"hace 1 día"}]},"clues":[{"id":"r3-clue-1","title":"Teoría de la conspiración (\"lo que ocultan las farmacéuticas\")","description":"Usa el argumento de que existe una verdad prohibida para no presentar estudios científicos serios.","locationLabel":"En el primer párrafo","category":"emocion"},{"id":"r3-clue-2","title":"Promesa de cura mágica en tiempo récord (\"48 horas\")","description":"Las enfermedades crónicas como el asma no se curan mágicamente en dos días con infusiones caseras.","locationLabel":"En la promesa terapéutica","category":"evidencia"},{"id":"r3-clue-3","title":"Interés comercial encubierto (venta de frascos)","description":"El verdadero objetivo de la publicación es vender frascos por delivery, lucrando con la angustia de los pacientes.","locationLabel":"En el tercer párrafo","category":"fuente"},{"id":"r3-clue-4","title":"Peligro grave para la vida de las personas","description":"Instar a los pacientes a dejar sus medicamentos inhaladores puede provocar crisis asmáticas fatales.","locationLabel":"En el comentario médico","category":"evidencia"}],"correctVerdict":"enganoso","verdictRationale":"Es una publicación engañosa y peligrosa: utiliza el sufrimiento de personas enfermas, inventa una cura mágica sin respaldo médico alguno y oculta un interés puramente comercial (vender frascos por delivery), poniendo en grave riesgo la salud de quienes abandonen su tratamiento médico real.","whatToLookFor":["¿Promete curar en horas una enfermedad crónica conocida?","¿Usa la frase \"lo que los médicos no quieren que sepas\"?","¿Al final te pide comprar un producto o contactar por WhatsApp?"],"realWorldMethodTip":"En temas de salud, consulta siempre con el médico o con la posta de salud. Las plantas medicinales pueden aliviar malestares menores, pero nunca reemplazan el tratamiento de una afección respiratoria seria.","searchAdvice":"Busca el ingrediente y la enfermedad en portales médicos reconocidos: \"tuna asma evidencia científica minsа\" o en la biblioteca médica PubMed."}]}];
+    const CHECKLIST_DATA = [{"id":"fuente","question":"1. ¿Quién lo dice? (Fuente y Autoría)","shortLabel":"¿Quién lo dice?","howToCheck":"Revisa quién firma la nota o qué cuenta publica. ¿Es un medio con dirección y equipo conocido, o una cuenta anónima creada hace poco? Mira la URL: ¿termina en nombres extraños como .xyz o imita a otro medio?","whyItMatters":"Si nadie da la cara con nombre, apellido o una institución formal, la probabilidad de que sea un rumor o un engaño es muy alta.","peruvianContextTip":"En el Perú proliferan páginas que usan palabras como \"Prensa\", \"Noticias Ya\" o \"Al Día\" sin ningún periodista identificado."},{"id":"evidencia","question":"2. ¿Qué evidencia presenta? (Datos y Citas)","shortLabel":"¿Qué evidencia hay?","howToCheck":"Busca números de normas legales (decretos, ordenanzas), documentos oficiales con sello, o declaraciones de especialistas con nombre y cargo comprobable. ¿Hay enlaces a estudios reales?","whyItMatters":"Frases como \"según expertos\", \"estudios revelan\" o \"un conocido me contó\" no son evidencia: son recursos para aparentar autoridad sin demostrar nada.","peruvianContextTip":"Cualquier disposición oficial debe figurar en el diario oficial El Peruano o en portales institucionales del Estado (.gob.pe)."},{"id":"contraste","question":"3. ¿Qué dicen otras fuentes independientes? (Contraste)","shortLabel":"¿Qué dicen otros?","howToCheck":"Abre un buscador e ingresa las palabras clave principales. Si es una noticia de gran impacto (un terremoto, una ley nueva, una epidemia), ¿la están cubriendo al menos dos medios independientes serios?","whyItMatters":"Ningún medio tiene la \"exclusiva secreta\" de un hecho público de gran magnitud. Si solo un canal de TikTok o un blog lo afirma, sospecha.","peruvianContextTip":"Compara medios de distintas regiones y agencias de noticias reconocidas antes de dar por cierto un suceso."},{"id":"contexto","question":"4. ¿Cuándo y dónde ocurrió? (Contexto y Fecha)","shortLabel":"¿Cuándo y dónde?","howToCheck":"Revisa la fecha exacta de publicación. A veces se comparten fotos, videos o notas reales de hace 3, 5 o 10 años haciéndolas pasar como ocurridas hoy por la mañana.","whyItMatters":"La desinformación más común no es inventar algo de cero, sino \"reciclar\" hechos pasados para generar indignación o confusión en el presente.","peruvianContextTip":"En temporadas de lluvias o protestas es habitual que recirculen videos de huaicos o marchas de años anteriores."},{"id":"emocion","question":"5. ¿Qué busca hacerme sentir o hacer? (Emoción y Urgencia)","shortLabel":"¿Qué quiere que sienta?","howToCheck":"¿El mensaje usa MAYÚSCULAS, signos de exclamación múltiple (¡¡¡), palabras de pánico (\"¡URGENTE COMPARTIR!\") o frases que te dan rabia o miedo inmediato?","whyItMatters":"Cuando nos emocionamos intensamente (miedo, furia o alegría extrema), nuestro cerebro baja las defensas críticas y compartimos por impulso.","peruvianContextTip":"Regla de oro ciudadana: Cuanta más prisa te pidan para reenviar un mensaje, más despacio debes analizarlo."}];
+    const DECALOGO_DATA = [{"number":1,"title":"Aplica la regla de la pausa","text":"Si una publicación te produce rabia, susto o euforia desmedida, no la compartas en caliente. Espera al menos un minuto antes de tocar el botón de reenviar."},{"number":2,"title":"No te quedes en el titular","text":"Abre la nota y lee al menos los tres primeros párrafos. Muchas veces el cuerpo desmiente o matiza lo que el titular sensacionalista prometía."},{"number":3,"title":"Pregunta siempre: ¿Quién lo firma?","text":"Si un contenido no tiene autor identificable ni un medio responsable detrás, trátalo con máxima prudencia: la autoría clara es el primer paso de la responsabilidad."},{"number":4,"title":"Busca al menos dos fuentes independientes","text":"Si una noticia es de gran impacto público, otros medios locales y nacionales también estarán cubriéndola. Si nadie más la menciona, duda con método."},{"number":5,"title":"Rastrea la fecha y el lugar original","text":"Revisa cuándo fue tomada esa foto o grabado ese video. Reciclar sucesos viejos haciéndolos pasar por actuales es el truco más común en redes."},{"number":6,"title":"Usa la búsqueda inversa de imágenes","text":"En tu celular o computadora, sube la foto a Google Lens para descubrir de qué año data y en qué lugar fue capturada por primera vez."},{"number":7,"title":"Examina las anomalías de la IA","text":"Revisa dedos de las manos, carteles con letras deformes, sombras incoherentes y pieles de plástico antes de maravillarte con una foto increíble."},{"number":8,"title":"Desconfía de la urgencia desesperada","text":"Los mensajes con \"¡URGENTE COMPARTIR!\" o \"¡ANTES DE QUE LO BORREN!\" buscan activar tu angustia para que no pienses."},{"number":9,"title":"Con la salud no se experimenta","text":"Nunca abandones ni aconsejes abandonar un tratamiento médico por un remedio casero \"milagroso\" difundido en cadenas de chat o videos virales."},{"number":10,"title":"Rompe la cadena con empatía","text":"Si alguien de tu familia comparte algo falso, no lo humilles ni te burles: explícale amablemente qué encontraste y cómo puede verificarlo la próxima vez."}];
+    const FACILITATOR_DATA = {"durationOptions":[{"mode":"60_min","label":"Sesión Dinámica (60 minutos)","steps":[{"time":"00-10 min","phase":"Apertura e inducción","goal":"Presentar el taller, acordar que \"dudar con método no es desconfiar de todo\" y revisar la Lista de Verificación transversal."},{"time":"10-25 min","phase":"Ruta 1: Noticias","goal":"Completar la mini-lección y resolver en parejas el Caso 1 y Caso 3."},{"time":"25-40 min","phase":"Ruta 2: Fotografías","goal":"Explorar las 3 láminas de análisis visual y resolver el Caso 1 (geografía) y Caso 2 (IA)."},{"time":"40-52 min","phase":"Ruta 3: Redes","goal":"Revisar cuentas clonadas y cadenas, resolviendo el Caso 1 o 2."},{"time":"52-60 min","phase":"Cierre y Compromiso","goal":"Repasar el Decálogo, firmar el Compromiso Personal y descargar el carnet de verificador/a."}]},{"mode":"90_min","label":"Taller Profundo con Debate (90 minutos)","steps":[{"time":"00-15 min","phase":"Apertura y Diagnóstico inicial","goal":"Pregunta disparadora: \"¿A quién le ha llegado alguna vez una noticia que resultó ser falsa?\". Presentación de RUNAS Verifica y las 5 preguntas."},{"time":"15-35 min","phase":"Ruta 1: Noticias en detalle","goal":"Lectura comentada de fuentes, titular anzuelo y contraste. Resolución de los 3 casos con debate grupal sobre por qué marcaron cada pista."},{"time":"35-55 min","phase":"Ruta 2: Fotografías y Lupa Visual","goal":"Práctica con búsqueda inversa y detección de IA. Resolver los 3 casos ficticios identificando inconsistencias espaciales y físicas."},{"time":"55-75 min","phase":"Ruta 3: Publicaciones y Redes Sociales","goal":"Análisis de manipulación emocional, handles clonados y desinformación en salud. Resolver los 3 casos."},{"time":"75-90 min","phase":"Plenaria, Decálogo y Certificación","goal":"Reflexión sobre el rol de la ciudadanía digital en la comunidad, firma colectiva del compromiso y entrega/impresión de carnets."}]}],"facilitatorTips":["Enfócate en las preguntas, no en las respuestas dogmáticas: pregúntales \"¿qué viste en la imagen que te hizo dudar?\" antes de revelar el veredicto.","Todos los casos son simulaciones pedagógicas éticas: recuerda a los participantes que ningún caso corresponde a personas ni medios reales.","Si un estudiante se equivoca de clasificación, anímalo: en la verificación periodística el error es parte del entrenamiento de la mirada crítica.","Pídeles que recuerden el \"Decálogo de la Pausa\" la próxima vez que abran el chat familiar."]};
+
+    let userState = {
+      view: 'home',
+      activeRoute: null,
+      activeLessonStep: 0,
+      activeCaseIndex: 0,
+      solvedCases: {},
+      selectedVerdict: null,
+      activeClue: null,
+      hasSubmitted: false,
+      participantName: '',
+      pledgeAgreed: false
+    };
+
+    function saveState() {
+      try {
+        localStorage.setItem('runas_state_offline', JSON.stringify(userState));
+      } catch (e) {}
+    }
+
+    function loadState() {
+      try {
+        const s = localStorage.getItem('runas_state_offline');
+        if (s) {
+          userState = Object.assign(userState, JSON.parse(s));
+        }
+      } catch (e) {}
+    }
+
+    function navigateTo(view, routeId = null) {
+      userState.view = view;
+      if (routeId) userState.activeRoute = routeId;
+      userState.selectedVerdict = null;
+      userState.activeClue = null;
+      userState.hasSubmitted = false;
+      renderApp();
+      saveState();
+      window.scrollTo(0, 0);
+    }
+
+    function renderApp() {
+      const root = document.getElementById('appRoot');
+      if (userState.view === 'home') {
+        renderHome(root);
+      } else if (userState.view === 'lesson') {
+        renderLesson(root);
+      } else if (userState.view === 'cases') {
+        renderCases(root);
+      } else if (userState.view === 'summary') {
+        renderSummary(root);
+      }
+    }
+
+    function renderHome(root) {
+      let routesHtml = '';
+      ROUTES_DATA.forEach(r => {
+        const solved = r.cases.filter(c => userState.solvedCases[c.id]).length;
+        routesHtml += `
+          <div class="route-card">
+            <div>
+              <span class="hero-tag">${r.badgeText}</span>
+              <h3 class="route-title">${r.title}</h3>
+              <p class="route-desc">${r.shortDescription}</p>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--text-muted);">
+                Progreso: ${solved}/3 casos resueltos
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="btn" style="flex: 1;" onclick="startLesson('${r.id}')">Ver lección</button>
+                <button class="btn btn-primary" style="flex: 1;" onclick="startCases('${r.id}')">Casos</button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      root.innerHTML = `
+        <div class="banner-ficticio">
+          <span>🛡️</span>
+          <span><strong>Material 100% pedagógico:</strong> Todos los casos son ficticios y éticos. Enseñamos el método sin usar personas ni noticias reales.</span>
+        </div>
+        <div class="hero-card">
+          <span class="hero-tag">Taller interactivo de 60 a 90 min</span>
+          <h1 class="hero-title">RUNAS Verifica</h1>
+          <p class="hero-desc">Aprende a dudar con método y no a desconfiar de todo. Examina noticias, fotografías y redes sociales con criterio ciudadano responsable.</p>
+          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="startLesson('noticias')">Comenzar con Noticias</button>
+            <button class="btn" onclick="openChecklistModal()">Ver las 5 Preguntas</button>
+            <button class="btn" onclick="navigateTo('summary')">Mi Carnet y Resumen</button>
+          </div>
+        </div>
+
+        <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 1rem;">Las 3 Rutas del Taller</h2>
+        <div class="routes-grid">${routesHtml}</div>
+
+        <div class="checklist-box">
+          <h3 style="font-weight: 800; margin-bottom: 0.25rem;">La Lista de Verificación RUNAS</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Las 5 preguntas clave antes de compartir:</p>
+          <div class="checklist-grid">
+            ${CHECKLIST_DATA.map((item, i) => `
+              <div class="checklist-item">
+                <b>${i+1}. ${item.shortLabel}</b>
+                <span>${item.howToCheck}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function startLesson(routeId) {
+      userState.activeRoute = routeId;
+      userState.activeLessonStep = 0;
+      navigateTo('lesson', routeId);
+    }
+
+    function startCases(routeId) {
+      userState.activeRoute = routeId;
+      userState.activeCaseIndex = 0;
+      navigateTo('cases', routeId);
+    }
+
+    function renderLesson(root) {
+      const route = ROUTES_DATA.find(r => r.id === userState.activeRoute);
+      const lesson = route.lessons[userState.activeLessonStep];
+      const isLast = userState.activeLessonStep === route.lessons.length - 1;
+
+      root.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <button class="btn" onclick="navigateTo('home')">← Volver al inicio</button>
+          <span style="font-size: 0.85rem; font-weight: 700;">Lámina ${userState.activeLessonStep + 1} de ${route.lessons.length}</span>
+        </div>
+        <div class="case-container">
+          <span class="hero-tag">${route.title} · Paso ${lesson.stepNumber}</span>
+          <h2 style="font-size: 1.6rem; font-weight: 900; margin: 0.5rem 0;">${lesson.title}</h2>
+          <div style="background: rgba(245, 158, 11, 0.1); padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.85rem;">
+            <strong>Pregunta clave:</strong> ${lesson.keyQuestion}
+          </div>
+          <p style="font-size: 1rem; margin-bottom: 1rem;">${lesson.summary}</p>
+          <div style="margin-bottom: 1rem;">
+            ${lesson.detailedExplanation.map(p => `<p style="font-size: 0.85rem; margin-bottom: 0.4rem;">• ${p}</p>`).join('')}
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
+            <div style="background: rgba(21, 128, 61, 0.1); border: 1px solid rgba(21, 128, 61, 0.3); padding: 0.75rem; border-radius: 0.5rem; font-size: 0.8rem;">
+              <b style="color: var(--success); display: block;">✓ ${lesson.visualExample.goodCase.label}</b>
+              ${lesson.visualExample.goodCase.detail}
+            </div>
+            <div style="background: rgba(185, 28, 28, 0.1); border: 1px solid rgba(185, 28, 28, 0.3); padding: 0.75rem; border-radius: 0.5rem; font-size: 0.8rem;">
+              <b style="color: var(--danger); display: block;">⚠ ${lesson.visualExample.alarmCase.label}</b>
+              ${lesson.visualExample.alarmCase.detail}
+            </div>
+          </div>
+          <div style="background: var(--bg); border: 1px dashed var(--border); padding: 0.75rem; border-radius: 0.5rem; font-size: 0.85rem; margin-bottom: 1.5rem;">
+            💡 <strong>Consejo de campo:</strong> ${lesson.practicalActionTip}
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <button class="btn" onclick="prevLessonStep()" ${userState.activeLessonStep === 0 ? 'disabled' : ''}>Anterior</button>
+            <button class="btn btn-primary" onclick="nextLessonStep()">${isLast ? 'Pasar a Casos Prácticos →' : 'Siguiente lámina →'}</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function prevLessonStep() {
+      if (userState.activeLessonStep > 0) {
+        userState.activeLessonStep--;
+        renderApp();
+      }
+    }
+
+    function nextLessonStep() {
+      const route = ROUTES_DATA.find(r => r.id === userState.activeRoute);
+      if (userState.activeLessonStep < route.lessons.length - 1) {
+        userState.activeLessonStep++;
+        renderApp();
+      } else {
+        startCases(userState.activeRoute);
+      }
+    }
+
+    function renderCases(root) {
+      const route = ROUTES_DATA.find(r => r.id === userState.activeRoute);
+      const c = route.cases[userState.activeCaseIndex];
+      const isSolved = userState.solvedCases[c.id];
+
+      root.innerHTML = `
+        <div class="banner-ficticio">
+          <span>[CASO DE PRÁCTICA FICTICIO]: Para entrenamiento de ciudadanía digital. Nombres y datos simulados.</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <button class="btn" onclick="navigateTo('home')">← Rutas</button>
+          <div style="display: flex; gap: 0.4rem;">
+            ${route.cases.map((cs, idx) => `
+              <button class="btn ${idx === userState.activeCaseIndex ? 'btn-primary' : ''}" onclick="switchCase(${idx})">
+                Caso ${idx + 1}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+          <div class="case-container">
+            <span class="hero-tag">${c.levelLabel} · ${c.caseTypeTag}</span>
+            <h2 style="font-size: 1.4rem; font-weight: 800; margin: 0.5rem 0;">${c.title}</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">${c.subtitle}</p>
+
+            <!-- Simulación -->
+            <div style="border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem; background: var(--bg); margin-bottom: 1rem;">
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                Publicado por: <strong>${c.simulatedContext.senderName}</strong> | ${c.simulatedContext.dateText}
+              </div>
+              ${c.simulatedContext.headline ? `<h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 0.5rem;">${c.simulatedContext.headline}</h3>` : ''}
+              ${c.simulatedContext.imageDescription ? `
+                <div style="background: #292524; color: #fff; padding: 0.85rem; border-radius: 0.5rem; text-align: center; font-size: 0.8rem; margin: 0.5rem 0;">
+                  📷 <strong>[FOTOGRAFÍA SIMULADA]:</strong> ${c.simulatedContext.imageDescription}
+                  ${c.simulatedContext.imageCluesNote ? `<div style="font-size: 0.75rem; color: #fde047; margin-top: 0.4rem;">🔍 ${c.simulatedContext.imageCluesNote}</div>` : ''}
+                </div>
+              ` : ''}
+              ${c.simulatedContext.bodyParagraphs.map(p => `<p style="font-size: 0.85rem; margin-bottom: 0.4rem;">${p}</p>`).join('')}
+              ${c.simulatedContext.quoteText ? `
+                <blockquote style="border-left: 3px solid var(--primary); padding-left: 0.75rem; margin: 0.5rem 0; font-style: italic; font-size: 0.85rem;">
+                  ${c.simulatedContext.quoteText} <br><small>— ${c.simulatedContext.quoteAuthor}</small>
+                </blockquote>
+              ` : ''}
+            </div>
+
+            <!-- Pistas -->
+            <h4 style="font-weight: 800; font-size: 0.95rem; margin-bottom: 0.5rem;">Pistas para examinar:</h4>
+            <div>
+              ${c.clues.map(clue => `
+                <div class="clue-chip ${userState.activeClue === clue.id ? 'active' : ''}" onclick="toggleClueOffline('${clue.id}')">
+                  <b>🔍 ${clue.title}</b>
+                  ${userState.activeClue === clue.id ? `<div style="font-size: 0.75rem; margin-top: 0.25rem;">${clue.description} (Ubicación: ${clue.locationLabel})</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Veredicto -->
+            <h4 style="font-weight: 800; font-size: 0.95rem; margin: 1rem 0 0.5rem 0;">Tu clasificación ciudadana:</h4>
+            <div>
+              <button class="verdict-btn ${userState.selectedVerdict === 'verificado' ? 'active' : ''}" onclick="selectVerdict('verificado')">
+                🟢 <b>Verificado:</b> Fuentes claras, autor identificado y contraste positivo.
+              </button>
+              <button class="verdict-btn ${userState.selectedVerdict === 'enganoso' ? 'active' : ''}" onclick="selectVerdict('enganoso')">
+                🟡 <b>Engañoso:</b> Mezcla verdades con mentiras o usa fotos fuera de contexto.
+              </button>
+              <button class="verdict-btn ${userState.selectedVerdict === 'sin_evidencia' ? 'active' : ''}" onclick="selectVerdict('sin_evidencia')">
+                🔴 <b>Sin evidencia suficiente:</b> Afirma un hecho sin aportar documentos ni pruebas válidas.
+              </button>
+              <button class="verdict-btn ${userState.selectedVerdict === 'no_puedo_saberlo' ? 'active' : ''}" onclick="selectVerdict('no_puedo_saberlo')">
+                🔵 <b>No puedo saberlo todavía:</b> Hecho en desarrollo; la postura prudente es pausar.
+              </button>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 0.5rem;" onclick="submitCaseClassification('${c.id}')">
+              Confirmar clasificación y ver retroalimentación
+            </button>
+
+            <!-- Retroalimentación -->
+            ${(userState.hasSubmitted || isSolved) ? `
+              <div class="feedback-box">
+                <h4 style="font-weight: 800; margin-bottom: 0.5rem;">
+                  ${userState.selectedVerdict === c.correctVerdict ? '¡Excelente análisis crítico!' : '¡Buen intento! En verificación el error es aprendizaje:'}
+                </h4>
+                <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">${c.verdictRationale}</p>
+                <div style="font-size: 0.8rem; color: #fde047; margin-bottom: 0.5rem;">
+                  <strong>Señales clave:</strong>
+                  ${c.whatToLookFor.map(w => `<div>• ${w}</div>`).join('')}
+                </div>
+                <div style="font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 0.4rem;">
+                  🛠️ <strong>Método en la vida real:</strong> ${c.realWorldMethodTip}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function switchCase(idx) {
+      userState.activeCaseIndex = idx;
+      userState.selectedVerdict = null;
+      userState.activeClue = null;
+      userState.hasSubmitted = false;
+      renderApp();
+    }
+
+    function toggleClueOffline(clueId) {
+      userState.activeClue = userState.activeClue === clueId ? null : clueId;
+      renderApp();
+    }
+
+    function selectVerdict(v) {
+      userState.selectedVerdict = v;
+      renderApp();
+    }
+
+    function submitCaseClassification(caseId) {
+      if (!userState.selectedVerdict) return;
+      userState.hasSubmitted = true;
+      userState.solvedCases[caseId] = {
+        chosenVerdict: userState.selectedVerdict,
+        date: new Date().toISOString()
+      };
+      saveState();
+      renderApp();
+    }
+
+    function renderSummary(root) {
+      const solved = Object.keys(userState.solvedCases).length;
+      root.innerHTML = `
+        <div class="case-container" style="border: 2px solid var(--primary); text-align: center;">
+          <span class="hero-tag">Constancia de Participación Ciudadana</span>
+          <h2 style="font-size: 2rem; font-weight: 900; margin: 0.5rem 0;">RUNAS Verifica</h2>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">Comunicación y ciudadanía digital · Perú</p>
+          <div style="font-size: 1.4rem; font-weight: 800; border-bottom: 2px solid var(--primary); display: inline-block; padding: 0 1.5rem 0.25rem 1.5rem; margin-bottom: 1rem;">
+            ${userState.participantName || '[Nombre del participante]'}
+          </div>
+          <p style="font-size: 0.85rem; max-width: 600px; margin: 0 auto 1.5rem auto;">
+            Ha completado la experiencia práctica del taller, ejercitando las 5 Preguntas Clave y la regla de la pausa antes de compartir.
+          </p>
+          <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 1.5rem;">
+            <div><b style="font-size: 1.4rem; color: var(--primary);">${solved}/9</b><br><small>Casos resueltos</small></div>
+            <div><b style="font-size: 1.4rem; color: var(--success);">✓ 100%</b><br><small>Compromiso</small></div>
+          </div>
+          <div style="background: rgba(245, 158, 11, 0.1); padding: 1rem; border-radius: 0.5rem; text-align: left; font-size: 0.85rem; margin-bottom: 1.5rem;">
+            <strong>Compromiso:</strong> "Me comprometo a hacer una pausa antes de reenviar mensajes alarmistas y a verificar fuentes con respeto."
+          </div>
+          <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir Carnet</button>
+        </div>
+
+        <div class="case-container no-print">
+          <h3 style="font-weight: 800; margin-bottom: 0.5rem;">Personaliza tu Carnet</h3>
+          <input type="text" placeholder="Escribe tu nombre y apellido" value="${userState.participantName}" oninput="userState.participantName=this.value; saveState();" style="width: 100%; padding: 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border); font-size: 0.9rem; margin-bottom: 0.5rem;">
+          <button class="btn btn-primary" onclick="renderApp()">Actualizar Carnet</button>
+        </div>
+
+        <div class="case-container">
+          <h3 style="font-weight: 800; margin-bottom: 0.75rem;">El Decálogo de la Pausa (10 Reglas de Oro)</h3>
+          ${DECALOGO_DATA.map(d => `
+            <div style="margin-bottom: 0.75rem; font-size: 0.85rem;">
+              <b>${d.number}. ${d.title}:</b> ${d.text}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function openChecklistModal() {
+      const list = document.getElementById('checklistItemsList');
+      list.innerHTML = CHECKLIST_DATA.map((item, idx) => `
+        <div style="margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.85rem;">
+          <h4 style="font-weight: 800; color: var(--primary);">${item.question}</h4>
+          <p style="margin: 0.25rem 0;"><strong>¿Cómo comprobar?</strong> ${item.howToCheck}</p>
+          <p style="color: var(--text-muted); margin: 0.25rem 0;"><strong>¿Por qué importa?</strong> ${item.whyItMatters}</p>
+          <div style="background: rgba(245, 158, 11, 0.1); padding: 0.4rem 0.6rem; border-radius: 0.4rem; font-size: 0.8rem; margin-top: 0.25rem;">
+            🇵🇪 <strong>Ojo en Perú:</strong> ${item.peruvianContextTip}
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('checklistModal').style.display = 'flex';
+    }
+
+    function openFacilitatorModal() {
+      const content = document.getElementById('facilitatorContent');
+      content.innerHTML = `
+        <div style="font-size: 0.85rem; line-height: 1.6;">
+          <h4 style="font-weight: 800; margin-bottom: 0.5rem;">Tiempos del taller recomendados (60 o 90 min)</h4>
+          <ul style="padding-left: 1.25rem; margin-bottom: 1rem;">
+            <li><strong>00-10 min:</strong> Introducción y las 5 Preguntas Clave.</li>
+            <li><strong>10-30 min:</strong> Ruta 1 (Noticias): fuentes, titulares anzuelo y contraste.</li>
+            <li><strong>30-50 min:</strong> Ruta 2 (Fotos): búsqueda inversa e imágenes de IA.</li>
+            <li><strong>50-70 min:</strong> Ruta 3 (Redes): cuentas clonadas y cadenas de WhatsApp.</li>
+            <li><strong>70-90 min:</strong> Plenaria, Decálogo y firma de compromiso.</li>
+          </ul>
+          <h4 style="font-weight: 800; margin-bottom: 0.5rem;">Consejos para el Facilitador:</h4>
+          ${FACILITATOR_DATA.facilitatorTips.map(t => `<p style="margin-bottom: 0.4rem;">• ${t}</p>`).join('')}
+        </div>
+      `;
+      document.getElementById('facilitatorModal').style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function closeModalOnBg(e, id) {
+      if (e.target.id === id) closeModal(id);
+    }
+
+    // Inicialización al cargar la página
+    loadState();
+    renderApp();
+  </script>
+</body>
+</html>

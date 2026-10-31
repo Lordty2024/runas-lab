@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Máquina de Felicitaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,500&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#120a06; --ink:#4a240e; --gold:#f2c46b; --cream:#fff7e6;
+    --panel:rgba(18,10,6,.82); --accent:#e8873c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);}
+  body{display:grid;place-items:center;overflow:hidden;font-family:Nunito,system-ui,sans-serif;}
+  #stage{
+    position:relative;width:min(100vw, 56.25dvh);aspect-ratio:9/16;
+    container-type:inline-size;overflow:hidden;background:#22140d;
+    box-shadow:0 0 60px rgba(0,0,0,.6);user-select:none;-webkit-user-select:none;
+  }
+  #scene,#fx{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #fx{pointer-events:none}
+  #fade{position:absolute;inset:0;background:#000;pointer-events:none}
+
+  /* Tarjeta flotante */
+  #card{
+    position:absolute;left:50%;top:34%;width:80cqw;opacity:0;pointer-events:none;
+    transform:translate(-50%,-50%) scale(.1);
+    padding:10cqw 6.5cqw 6.5cqw;text-align:center;color:var(--ink);
+    background:radial-gradient(120% 90% at 50% 0%,#fffdf6 0%,#fbeccd 60%,#f0d9ad 100%);
+    border-radius:4.5cqw;
+    box-shadow:0 0 0 1.1cqw #c9973f,0 0 0 1.8cqw #6b3a17,0 3cqw 9cqw rgba(0,0,0,.55),0 0 16cqw rgba(255,196,110,.55);
+  }
+  #card .cap{position:absolute;left:50%;top:-8.5cqw;width:17cqw;transform:translateX(-50%);filter:drop-shadow(0 1cqw 1.2cqw rgba(0,0,0,.35))}
+  #card .to{display:inline-block;background:#8b2f2f;color:#fff3d6;font:800 3.5cqw/1 Nunito,sans-serif;
+    padding:1.6cqw 4.2cqw;border-radius:99px;letter-spacing:.04em;margin-bottom:3.4cqw;box-shadow:inset 0 -.6cqw 0 rgba(0,0,0,.2)}
+  #card h1{font:800 7.6cqw/1.04 Fraunces,Georgia,serif;color:#7a3412;margin:0 0 2.8cqw;letter-spacing:-.01em}
+  #card p{font:700 4.7cqw/1.38 Nunito,sans-serif;margin:0;color:#5a2e12}
+  #card .cg{position:absolute;width:9cqw;height:9cqw;animation:spin 6s linear infinite}
+  #card .cg.a{left:2.2cqw;top:2.2cqw}
+  #card .cg.b{right:2.2cqw;top:2.2cqw;animation-direction:reverse}
+  #card .cg.c{left:2.2cqw;bottom:2.2cqw;animation-direction:reverse}
+  #card .cg.d{right:2.2cqw;bottom:2.2cqw}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  #closing{position:absolute;left:0;right:0;bottom:3.2%;text-align:center;opacity:0;pointer-events:none}
+  #closing .l1{font:italic 500 4.8cqw/1.1 Fraunces,Georgia,serif;color:#f6d9a8;text-shadow:0 .4cqw 1.5cqw rgba(0,0,0,.7)}
+  #closing .l2{font:800 6.4cqw/1.15 Nunito,sans-serif;margin-top:1cqw;padding:0 6cqw;
+    background:linear-gradient(180deg,#fff1c2,#f2b54a 60%,#d9822b);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 2cqw rgba(255,180,80,.55)) drop-shadow(0 .5cqw .6cqw rgba(0,0,0,.6))}
+
+  /* Controles */
+  #ui{position:absolute;top:12px;right:12px;display:flex;gap:8px;transition:opacity .4s;z-index:5}
+  #stage.idle #ui,#stage.idle #bar{opacity:0}
+  #stage.idle{cursor:none}
+  .ib{width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(242,196,107,.7);
+    background:rgba(30,16,8,.72);color:#ffe3a8;font-size:18px;display:grid;place-items:center;cursor:pointer;
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:transform .15s,background .15s}
+  .ib:hover{background:rgba(80,40,16,.85);transform:scale(1.06)}
+  .ib:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .ib svg{width:18px;height:18px}
+  #stage.ended #bRestart,#bSound.hint{animation:pulse 1.2s ease-in-out infinite}
+  #bSound[aria-pressed=true]{background:rgba(242,181,74,.9);color:#2a1206;border-color:#ffe3a8}
+  #stage.idle #ui:has(#bSound.hint){opacity:1}
+  @keyframes pulse{50%{box-shadow:0 0 0 8px rgba(242,196,107,.25);transform:scale(1.08)}}
+  #bar{position:absolute;left:0;bottom:0;height:3px;width:0;background:linear-gradient(90deg,#f2b54a,#ff7ad9);transition:opacity .4s;z-index:4}
+
+  #panel{position:absolute;inset:0;z-index:10;background:var(--panel);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    display:grid;place-items:center;padding:16px}
+  #panel[hidden]{display:none}
+  #form{position:relative;width:100%;max-width:420px;background:linear-gradient(#2e1a0e,#22130a);border:1.5px solid #9c6a2c;
+    border-radius:18px;padding:22px 18px 18px;color:#f7e3bf;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+  #form h2{margin:0 0 14px;font:800 20px Fraunces,Georgia,serif;color:var(--gold)}
+  #form label{display:block;font-weight:700;font-size:13px;margin-bottom:12px;color:#e9c991}
+  #form input[type=text],#form textarea{display:block;width:100%;margin-top:5px;padding:10px 12px;border-radius:10px;border:1px solid #7a5226;
+    background:#150b05;color:#fff4dd;font:600 15px Nunito,sans-serif;resize:vertical}
+  #form input:focus,#form textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+  #form small{display:block;margin-top:5px;font-weight:500;color:#b8936a;font-size:12px}
+  #form .pre{display:block;font:italic 500 13px Fraunces,serif;color:#b8936a;margin-top:4px}
+  #form .chk{display:flex;align-items:center;gap:8px;font-weight:600}
+  #form .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  #form .row button{flex:1 1 140px;padding:11px 12px;border-radius:10px;font:800 14px Nunito,sans-serif;cursor:pointer;border:1.5px solid #9c6a2c;background:#3a2112;color:#ffe3a8}
+  #form .row .primary{background:linear-gradient(#f2b54a,#d9822b);color:#2a1206;border-color:#f2c46b}
+  #close{position:absolute;top:8px;right:10px;background:none;border:0;color:#e9c991;font-size:26px;cursor:pointer;line-height:1}
+  #toast{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);background:#2a1608;color:#ffe3a8;border:1px solid #9c6a2c;
+    padding:8px 14px;border-radius:99px;font-weight:700;font-size:14px;opacity:0;transition:opacity .3s;z-index:12;pointer-events:none;white-space:nowrap}
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="stage" role="img" aria-label="Animación de felicitación: una máquina steampunk transforma una tarjeta con un nombre en un mensaje de logro">
+
+<svg id="scene" viewBox="0 0 540 960" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4d2e1d"/><stop offset=".7" stop-color="#2b180e"/><stop offset="1" stop-color="#1d0f08"/>
+    </linearGradient>
+    <radialGradient id="gHalo"><stop offset="0" stop-color="#ffd48a" stop-opacity=".6"/><stop offset=".5" stop-color="#ffb050" stop-opacity=".16"/><stop offset="1" stop-color="#ffb050" stop-opacity="0"/></radialGradient>
+    <linearGradient id="gCopper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6b884"/><stop offset=".35" stop-color="#d77a3e"/><stop offset=".7" stop-color="#a24d22"/><stop offset="1" stop-color="#6e3115"/>
+    </linearGradient>
+    <linearGradient id="gCopperV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ec9a62"/><stop offset=".5" stop-color="#a8522a"/><stop offset="1" stop-color="#5e2a12"/>
+    </linearGradient>
+    <linearGradient id="gBrass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbe39a"/><stop offset=".5" stop-color="#d9a646"/><stop offset="1" stop-color="#8f6222"/>
+    </linearGradient>
+    <radialGradient id="gGlass" cx=".35" cy=".3" r=".8">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/><stop offset=".45" stop-color="#cfeef0" stop-opacity=".14"/><stop offset="1" stop-color="#9fd8e0" stop-opacity=".1"/>
+    </radialGradient>
+    <radialGradient id="gDoorLight"><stop offset="0" stop-color="#fffbe8"/><stop offset=".45" stop-color="#ffe08a"/><stop offset="1" stop-color="#ff9e3d"/></radialGradient>
+    <linearGradient id="gShell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbf3e4"/><stop offset="1" stop-color="#dcc6a2"/></linearGradient>
+    <linearGradient id="gFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3e2617"/><stop offset="1" stop-color="#170b05"/></linearGradient>
+    <radialGradient id="gVig" cx=".5" cy=".45" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".65"/></radialGradient>
+    <filter id="fGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="fSoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+    <pattern id="pBrick" width="64" height="40" patternUnits="userSpaceOnUse">
+      <path d="M0 1H64M0 21H64M16 1V21M48 21V41" stroke="#000" stroke-width="2" fill="none"/>
+    </pattern>
+    <clipPath id="slotClip"><rect x="0" y="-300" width="540" height="1037"/></clipPath>
+  </defs>
+
+  <!-- Taller -->
+  <rect width="540" height="960" fill="url(#gWall)"/>
+  <rect width="540" height="846" fill="url(#pBrick)" opacity=".22"/>
+
+  <!-- Plano en la pared -->
+  <g transform="rotate(-5 450 155)" opacity=".85">
+    <rect x="398" y="118" width="108" height="76" fill="#2d5b86" stroke="#cfe3f5" stroke-width="1.5"/>
+    <g stroke="#d6e8f7" stroke-width="1" fill="none" opacity=".8">
+      <circle cx="430" cy="156" r="16"/><circle cx="430" cy="156" r="6"/>
+      <path d="M452 136H496M452 146H486M452 170H494M452 180H478M414 128H446"/>
+      <rect x="456" y="152" width="30" height="12"/>
+    </g>
+    <circle cx="404" cy="123" r="3" fill="#e84a3c"/><circle cx="500" cy="123" r="3" fill="#e84a3c"/>
+  </g>
+
+  <!-- Repisa con frascos -->
+  <g>
+    <rect x="14" y="218" width="128" height="7" rx="2" fill="#6b4325"/>
+    <path d="M26 225l8 14M130 225l-8 14" stroke="#4a2c18" stroke-width="4"/>
+    <rect x="28" y="199" width="18" height="18" rx="3" fill="#5ff2e0" opacity=".55"/>
+    <rect x="26" y="182" width="22" height="36" rx="6" fill="rgba(200,240,255,.18)" stroke="#e6d1a8" stroke-width="1.5"/>
+    <rect x="64" y="192" width="18" height="25" rx="3" fill="#ff7ad9" opacity=".5"/>
+    <rect x="62" y="172" width="22" height="46" rx="6" fill="rgba(200,240,255,.18)" stroke="#e6d1a8" stroke-width="1.5"/>
+    <circle cx="112" cy="204" r="12" fill="#ffd166" opacity=".55"/>
+    <circle cx="112" cy="202" r="15" fill="rgba(200,240,255,.18)" stroke="#e6d1a8" stroke-width="1.5"/>
+    <rect x="107" y="180" width="10" height="9" fill="#a36a3a"/>
+  </g>
+
+  <!-- Lámparas -->
+  <g id="lamp0">
+    <line x1="100" y1="0" x2="100" y2="66" stroke="#2a1a10" stroke-width="3"/>
+    <circle class="halo" cx="100" cy="86" r="150" fill="url(#gHalo)"/>
+    <path d="M78 80 Q100 56 122 80 Z" fill="url(#gBrass)"/>
+    <circle class="bulb" cx="100" cy="86" r="8" fill="#ffe7a8"/>
+  </g>
+  <g id="lamp1">
+    <line x1="440" y1="0" x2="440" y2="56" stroke="#2a1a10" stroke-width="3"/>
+    <circle class="halo" cx="440" cy="76" r="150" fill="url(#gHalo)"/>
+    <path d="M418 70 Q440 46 462 70 Z" fill="url(#gBrass)"/>
+    <circle class="bulb" cx="440" cy="76" r="8" fill="#ffe7a8"/>
+  </g>
+
+  <!-- Piso -->
+  <rect y="846" width="540" height="114" fill="url(#gFloor)"/>
+  <path d="M0 846H540M0 878H540M0 916H540" stroke="#120804" stroke-width="2"/>
+  <path d="M60 846V878M210 846V878M380 846V878M140 878V916M300 878V916M470 878V916M40 916V960M230 916V960M410 916V960" stroke="#120804" stroke-width="2"/>
+  <ellipse cx="270" cy="852" rx="290" ry="46" fill="url(#gHalo)" opacity=".55"/>
+
+  <!-- Engranajes del fondo -->
+  <g id="gearsBack"></g>
+
+  <ellipse cx="270" cy="850" rx="215" ry="12" fill="#000" opacity=".45"/>
+
+  <!-- MÁQUINA -->
+  <g id="machine">
+    <g id="chimney">
+      <rect x="318" y="150" width="56" height="200" fill="url(#gCopperV)" stroke="#5a2610" stroke-width="3"/>
+      <rect x="314" y="190" width="64" height="10" fill="url(#gBrass)"/>
+      <rect x="314" y="262" width="64" height="10" fill="url(#gBrass)"/>
+      <rect x="306" y="130" width="80" height="24" rx="7" fill="url(#gBrass)" stroke="#6e4a1a" stroke-width="2"/>
+      <ellipse cx="346" cy="132" rx="30" ry="5" fill="#2a140a"/>
+    </g>
+
+    <!-- Manómetro -->
+    <rect x="272" y="320" width="12" height="24" fill="url(#gBrass)"/>
+    <circle cx="278" cy="298" r="30" fill="#fff3dc" stroke="url(#gBrass)" stroke-width="6"/>
+    <path d="M300 310 A24 24 0 0 0 302 290" stroke="#e84a3c" stroke-width="5" fill="none"/>
+    <g id="ticks" stroke="#5a2e12" stroke-width="1.5"></g>
+    <line id="needle" x1="278" y1="298" x2="278" y2="276" stroke="#2a1206" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="278" cy="298" r="4" fill="#8f6222"/>
+
+    <!-- Domo de cristal -->
+    <rect x="120" y="336" width="110" height="18" rx="6" fill="url(#gBrass)" stroke="#6e4a1a" stroke-width="2"/>
+    <circle id="coreHalo" cx="175" cy="298" r="40" fill="#ffd166" opacity="0" filter="url(#fSoft)"/>
+    <circle id="core" cx="175" cy="298" r="16" fill="#6b4a33" filter="url(#fGlow)"/>
+    <circle cx="175" cy="290" r="62" fill="url(#gGlass)" stroke="#f1d9a8" stroke-width="3" stroke-opacity=".7"/>
+    <path d="M132 268 A46 46 0 0 1 160 238" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity=".55"/>
+
+    <!-- Cuerpo -->
+    <rect x="80" y="340" width="380" height="420" rx="42" fill="url(#gCopper)" stroke="#5a2610" stroke-width="4"/>
+    <rect x="100" y="362" width="340" height="376" rx="30" fill="none" stroke="rgba(255,220,170,.28)" stroke-width="2"/>
+    <g id="rivets"></g>
+    <rect x="186" y="366" width="104" height="20" rx="4" fill="url(#gBrass)" stroke="#6e4a1a" stroke-width="1.5"/>
+    <text x="238" y="380.5" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="800" font-size="10.5" letter-spacing="1.6" fill="#5a3410">LOGRÓMETRO</text>
+
+    <g id="gearsFront"></g>
+
+    <!-- Tubos de cristal -->
+    <g id="tubes" fill="none" stroke-linecap="round"></g>
+    <g id="spheres"></g>
+
+    <!-- Bombillas -->
+    <g id="bulbs"></g>
+
+    <!-- Puerta -->
+    <circle id="doorLight" cx="270" cy="590" r="76" fill="url(#gDoorLight)" opacity="0"/>
+    <g id="door">
+      <circle cx="270" cy="590" r="74" fill="url(#gCopperV)" stroke="#5a2610" stroke-width="3"/>
+      <circle cx="270" cy="590" r="30" fill="#2a1a12"/>
+      <circle cx="270" cy="590" r="30" fill="url(#gGlass)" stroke="url(#gBrass)" stroke-width="5"/>
+      <g stroke="url(#gBrass)" stroke-width="5"><line x1="270" y1="522" x2="270" y2="560"/><line x1="270" y1="620" x2="270" y2="658"/><line x1="202" y1="590" x2="240" y2="590"/></g>
+      <rect x="326" y="582" width="16" height="16" rx="4" fill="url(#gBrass)" stroke="#6e4a1a" stroke-width="1.5"/>
+      <circle id="doorShade" cx="270" cy="590" r="74" fill="#000" opacity="0"/>
+    </g>
+    <circle cx="270" cy="590" r="82" fill="none" stroke="url(#gBrass)" stroke-width="10"/>
+    <g id="doorBolts"></g>
+    <g id="rays" opacity="0"></g>
+
+    <!-- Respiraderos -->
+    <rect x="458" y="446" width="24" height="12" rx="3" fill="url(#gBrass)" stroke="#6e4a1a" stroke-width="1.5"/>
+    <!-- Base y patas -->
+    <rect x="60" y="752" width="420" height="28" rx="10" fill="url(#gCopperV)" stroke="#5a2610" stroke-width="3"/>
+    <rect x="40" y="760" width="22" height="11" rx="3" fill="url(#gBrass)"/>
+    <path d="M84 780h30v52q0 14 14 14h-58q14 0 14-14z" fill="url(#gBrass)" stroke="#6e4a1a" stroke-width="2"/>
+    <path d="M426 780h30v52q0 14 14 14h-58q14 0 14-14z" fill="url(#gBrass)" stroke="#6e4a1a" stroke-width="2"/>
+  </g>
+
+  <!-- Consola de la ranura -->
+  <g id="console">
+    <rect x="136" y="742" width="72" height="106" rx="6" fill="url(#gCopperV)" stroke="#5a2610" stroke-width="3"/>
+    <rect x="128" y="730" width="88" height="14" rx="5" fill="url(#gBrass)" stroke="#6e4a1a" stroke-width="2"/>
+    <rect x="142" y="733" width="60" height="7" rx="3.5" fill="#120a06"/>
+    <line x1="210" y1="730" x2="210" y2="720" stroke="#6e4a1a" stroke-width="3"/>
+    <circle id="slotLight" cx="210" cy="716" r="5" fill="#ffb347" filter="url(#fGlow)"/>
+    <circle id="ding" cx="172" cy="736" r="6" fill="none" stroke="#7dffb0" stroke-width="3" opacity="0"/>
+    <circle cx="172" cy="796" r="15" fill="url(#gBrass)" stroke="#6e4a1a" stroke-width="2"/>
+    <circle id="btn" cx="172" cy="795" r="10" fill="#d93d30"/>
+    <circle id="btnHi" cx="168" cy="791" r="3" fill="#fff" opacity=".5"/>
+  </g>
+
+  <!-- Tarjeta con el nombre -->
+  <g id="cardWrap">
+    <g id="nameCard">
+      <rect x="-28" y="-18" width="56" height="36" rx="4" fill="#fff6e0" stroke="#b8862f" stroke-width="2"/>
+      <rect x="-24" y="-14" width="48" height="28" rx="2" fill="none" stroke="#e2c58a" stroke-width="1"/>
+      <text x="0" y="-6" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="5.5" letter-spacing="1" fill="#a36a3a">PARA</text>
+      <text id="cardName" x="0" y="7" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="800" font-size="10" fill="#5a2e12">Christian</text>
+    </g>
+  </g>
+
+  <!-- Robot -->
+  <ellipse id="rShadow" cx="0" cy="0" rx="26" ry="5" fill="#000" opacity=".4"/>
+  <g id="robot">
+    <g id="rBody">
+      <g id="rArmL">
+        <rect x="-20" y="-62" width="30" height="8" rx="4" fill="#b8622e"/>
+        <circle cx="12" cy="-58" r="6" fill="url(#gBrass)"/>
+      </g>
+      <g id="rWheel">
+        <circle cx="0" cy="-12" r="12" fill="#3a2a20" stroke="#c98a4a" stroke-width="3"/>
+        <path d="M0 -21V-3M-9 -12H9" stroke="#c98a4a" stroke-width="2"/>
+      </g>
+      <rect x="-8" y="-26" width="16" height="8" fill="#8f6222"/>
+      <rect x="-26" y="-72" width="52" height="50" rx="14" fill="url(#gShell)" stroke="#a8875a" stroke-width="2"/>
+      <circle cx="0" cy="-47" r="9" fill="#1d3a3a" stroke="#c9973f" stroke-width="2"/>
+      <circle id="rChest" cx="0" cy="-47" r="4.5" fill="#6ff0d8"/>
+      <g id="rHead">
+        <rect x="-4" y="-78" width="8" height="8" fill="#8f6222"/>
+        <line x1="0" y1="-110" x2="0" y2="-124" stroke="#8f6222" stroke-width="2.5"/>
+        <circle id="rAnt" cx="0" cy="-127" r="5" fill="#ff7a5c" filter="url(#fGlow)"/>
+        <circle cx="-25" cy="-91" r="4.5" fill="#c46a32"/>
+        <circle cx="25" cy="-91" r="4.5" fill="#c46a32"/>
+        <rect x="-25" y="-110" width="50" height="38" rx="13" fill="url(#gShell)" stroke="#a8875a" stroke-width="2"/>
+        <rect x="-16" y="-103" width="36" height="24" rx="10" fill="#16302f"/>
+        <g id="eyesN" fill="#7af7e2"><circle cx="-3" cy="-91" r="4.6"/><circle cx="11" cy="-91" r="4.6"/></g>
+        <g id="eyesX" stroke="#7af7e2" stroke-width="2.6" stroke-linecap="round" opacity="0"><path d="M-7 -95L1 -87M1 -95L-7 -87M7 -95L15 -87M15 -95L7 -87"/></g>
+        <g id="eyesH" stroke="#7af7e2" stroke-width="2.8" stroke-linecap="round" fill="none" opacity="0"><path d="M-8 -89Q-3 -97 2 -89M6 -89Q11 -97 16 -89"/></g>
+        <ellipse cx="17" cy="-80" rx="4" ry="2.4" fill="#ff9a8a" opacity=".55"/>
+      </g>
+      <g id="rArmR">
+        <rect x="22" y="-62" width="32" height="8" rx="4" fill="#c46a32"/>
+        <circle cx="57" cy="-58" r="6.5" fill="url(#gBrass)"/>
+        <path d="M60 -63l5 -3M60 -53l5 3" stroke="#8f6222" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Tuerca traviesa -->
+  <g id="bolt" opacity="0"><polygon points="-6,-3.5 0,-7 6,-3.5 6,3.5 0,7 -6,3.5" fill="url(#gBrass)" stroke="#6e4a1a" stroke-width="1.5"/><circle r="2.4" fill="#4a2c18"/></g>
+
+  <rect id="dark" width="540" height="960" fill="#0a0503" opacity=".6"/>
+  <rect width="540" height="960" fill="url(#gVig)" pointer-events="none"/>
+</svg>
+
+<canvas id="fx"></canvas>
+
+<div id="card" aria-live="polite">
+  <svg class="cap" viewBox="0 0 64 44" aria-hidden="true">
+    <path d="M32 4 L62 16 L32 28 L2 16 Z" fill="#2a1a12" stroke="#c9973f" stroke-width="2"/>
+    <path d="M14 22 V32 Q32 42 50 32 V22 L32 29 Z" fill="#3a2418" stroke="#c9973f" stroke-width="2"/>
+    <path d="M52 18 V32" stroke="#f2b54a" stroke-width="2.5"/><circle cx="52" cy="34" r="3.5" fill="#f2b54a"/>
+  </svg>
+  <svg class="cg a" viewBox="-12 -12 24 24"></svg><svg class="cg b" viewBox="-12 -12 24 24"></svg>
+  <svg class="cg c" viewBox="-12 -12 24 24"></svg><svg class="cg d" viewBox="-12 -12 24 24"></svg>
+  <div class="to" id="toLabel">Para Christian</div>
+  <h1 id="headline">¡Experimento exitoso!</h1>
+  <p id="body">Transformaste aspiraciones, desvelos y esfuerzo en un título</p>
+</div>
+
+<div id="closing"><div class="l1">Con cariño,</div><div class="l2" id="fromLabel">el personal de Runas AI</div></div>
+
+<div id="fade"></div>
+<div id="bar"></div>
+
+<div id="ui">
+  <button class="ib hint" id="bSound" title="Sonido: apagado (M)" aria-label="Activar sonido" aria-pressed="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" stroke="none"/>
+      <g id="sndOn" style="display:none"><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.5a7.5 7.5 0 0 1 0 11"/></g>
+      <g id="sndOff"><path d="M16 9.5l5 5M21 9.5l-5 5"/></g>
+    </svg>
+  </button>
+  <button class="ib" id="bPlay" title="Pausar / reproducir (espacio)" aria-label="Pausar o reproducir">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path id="playIcon" d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg>
+  </button>
+  <button class="ib" id="bRestart" title="Reiniciar (R)" aria-label="Reiniciar animación">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></svg>
+  </button>
+  <button class="ib" id="bEdit" title="Personalizar" aria-label="Personalizar textos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>
+  </button>
+</div>
+
+<div id="panel" hidden>
+  <form id="form" autocomplete="off">
+    <button type="button" id="close" aria-label="Cerrar">×</button>
+    <h2>Personalizar saludo</h2>
+    <label>Destinatario<input type="text" id="fTo" maxlength="28"></label>
+    <label>Mensaje<textarea id="fMsg" rows="4" maxlength="170"></textarea>
+      <small>Si empieza con «¡…!», esa frase se muestra como titular.</small></label>
+    <label>Remitente<span class="pre">Con cariño,</span><input type="text" id="fFrom" maxlength="44"></label>
+    <label class="chk"><input type="checkbox" id="fLoop"> Repetir en bucle</label>
+    <div class="row">
+      <button type="submit" class="primary">Aplicar y reproducir</button>
+      <button type="button" id="copy">Copiar enlace personalizado</button>
+    </div>
+  </form>
+</div>
+<div id="toast">Enlace copiado</div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const DUR = 30;
+const NS = "http://www.w3.org/2000/svg";
+const $ = id => document.getElementById(id);
+const stage = $("stage");
+
+/* ---------- Estado editable ---------- */
+const DEF = {
+  to: "Christian",
+  msg: "¡Experimento exitoso! Transformaste aspiraciones, desvelos y esfuerzo en un título",
+  from: "el personal de Runas AI",
+  loop: false
+};
+const state = { ...DEF };
+try {
+  const q = new URLSearchParams(location.search);
+  if (q.has("para")) state.to = q.get("para");
+  if (q.has("msg")) state.msg = q.get("msg");
+  if (q.has("de")) state.from = q.get("de");
+  if (q.get("loop") === "1") state.loop = true;
+} catch (e) {}
+
+/* ---------- Utilidades ---------- */
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, p) => a + (b - a) * p;
+const ease = p => p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+const eOut = p => 1 - Math.pow(1 - p, 3);
+const eBack = p => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+const smooth = p => p * p * (3 - 2 * p);
+function kf(t, keys) {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    const [t1, v1, e] = keys[i];
+    if (t <= t1) {
+      const [t0, v0] = keys[i - 1];
+      const p = t1 === t0 ? 1 : (t - t0) / (t1 - t0);
+      return v0 + (v1 - v0) * (e || ease)(p);
+    }
+  }
+  return keys[keys.length - 1][1];
+}
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = rng(20261027);
+function el(tag, attrs, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function gearPath(r, n, th) {
+  const rb = r - th, step = Math.PI * 2 / n; let d = "";
+  for (let i = 0; i < n; i++) {
+    const a = i * step;
+    const pts = [[rb, a], [r, a + step * .18], [r, a + step * .42], [rb, a + step * .6]];
+    pts.forEach(([rr, aa], j) => { d += (i === 0 && j === 0 ? "M" : "L") + (Math.cos(aa) * rr).toFixed(2) + " " + (Math.sin(aa) * rr).toFixed(2); });
+  }
+  return d + "Z";
+}
+
+/* ---------- Construcción de la escena ---------- */
+const gears = [];
+function makeGear(parent, cx, cy, r, n, fill, speed, opacity = 1) {
+  const g = el("g", { opacity }, parent);
+  const inner = el("g", { transform: `translate(${cx} ${cy})` }, g);
+  const rot = el("g", {}, inner);
+  el("path", { d: gearPath(r, n, Math.max(5, r * .17)), fill, stroke: "#4a2a12", "stroke-width": 2 }, rot);
+  for (let i = 0; i < 5; i++) {
+    const a = i * Math.PI * 2 / 5;
+    el("circle", { cx: Math.cos(a) * r * .5, cy: Math.sin(a) * r * .5, r: r * .15, fill: "#2a160a", opacity: .55 }, rot);
+  }
+  el("circle", { r: r * .24, fill: "url(#gBrass)", stroke: "#4a2a12", "stroke-width": 1.5 }, rot);
+  el("circle", { r: r * .07, fill: "#4a2a12" }, rot);
+  gears.push({ rot, speed });
+}
+const gb = $("gearsBack");
+makeGear(gb, 104, 436, 78, 14, "#9a6a2e", 1, .95);
+makeGear(gb, 448, 548, 62, 12, "#a5752f", -1.26, .95);
+makeGear(gb, 478, 404, 34, 8, "#b38236", 2.3, .95);
+const gf = $("gearsFront");
+makeGear(gf, 404, 664, 26, 10, "url(#gBrass)", -3);
+makeGear(gf, 430, 704, 17, 8, "url(#gBrass)", 4.5);
+
+// remaches
+const rv = $("rivets");
+for (let x = 124; x <= 420; x += 32) { el("circle", { cx: x, cy: 352, r: 3, fill: "#f7c79a", stroke: "#6e3115" }, rv); el("circle", { cx: x, cy: 748, r: 3, fill: "#f7c79a", stroke: "#6e3115" }, rv); }
+for (let y = 388; y <= 716; y += 36) { el("circle", { cx: 92, cy: y, r: 3, fill: "#f7c79a", stroke: "#6e3115" }, rv); el("circle", { cx: 448, cy: y, r: 3, fill: "#f7c79a", stroke: "#6e3115" }, rv); }
+// pernos de la puerta
+const db = $("doorBolts");
+for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; el("circle", { cx: 270 + Math.cos(a) * 82, cy: 590 + Math.sin(a) * 82, r: 2.6, fill: "#6e4a1a" }, db); }
+// marcas del manómetro
+const tk = $("ticks");
+for (let i = 0; i <= 8; i++) { const a = (-220 + i * 32.5) * Math.PI / 180; el("line", { x1: 278 + Math.cos(a) * 20, y1: 298 + Math.sin(a) * 20, x2: 278 + Math.cos(a) * 25, y2: 298 + Math.sin(a) * 25 }, tk); }
+// rayos de luz
+const rays = $("rays");
+for (let i = 0; i < 14; i++) {
+  const a = i * Math.PI * 2 / 14, w = .07;
+  el("polygon", { points: `270,590 ${270 + Math.cos(a - w) * 300},${590 + Math.sin(a - w) * 300} ${270 + Math.cos(a + w) * 300},${590 + Math.sin(a + w) * 300}`, fill: "#ffe3a0", opacity: .28 }, rays);
+}
+// bombillas
+const bulbs = [];
+for (let i = 0; i < 6; i++) bulbs.push(el("circle", { cx: 207 + i * 25, cy: 714, r: 5.5, fill: "#5a3a22", stroke: "#8f6222", "stroke-width": 1.5 }, $("bulbs")));
+// tubos
+const TUBES = [
+  { d: "M172,742 C150,692 110,642 110,560 S128,432 175,354", c: "#5ff2e0" },
+  { d: "M175,354 C175,410 140,410 142,452 S222,488 270,446 S322,372 346,352", c: "#ffb84d" },
+  { d: "M374,330 C440,330 446,400 432,470 S394,600 354,612", c: "#ff7ad9" }
+];
+const tubesG = $("tubes"), paths = [], lens = [], glows = [];
+TUBES.forEach((tb, k) => {
+  el("path", { d: tb.d, stroke: "rgba(225,245,255,.16)", "stroke-width": 20 }, tubesG);
+  const g = el("path", { d: tb.d, stroke: tb.c, "stroke-width": 8, opacity: 0, filter: "url(#fGlow)" }, tubesG);
+  el("path", { d: tb.d, stroke: "rgba(255,255,255,.32)", "stroke-width": 2.5, transform: "translate(-4 -3)" }, tubesG);
+  const p = el("path", { d: tb.d, stroke: "rgba(210,240,255,.35)", "stroke-width": 1.2 }, tubesG);
+  paths.push(p); glows.push(g);
+});
+TUBES.forEach(tb => {
+  const m = tb.d.match(/M([\d.]+),([\d.]+)/);
+  el("circle", { cx: m[1], cy: m[2], r: 12, fill: "none", stroke: "url(#gBrass)", "stroke-width": 4 }, tubesG);
+});
+paths.forEach(p => lens.push(p.getTotalLength()));
+// esferas
+const PAL = ["#5ff2e0", "#ffd166", "#ff7ad9", "#9b8cff", "#7dffb0", "#ff9a5c"];
+const spheres = [];
+[8.2, 9.2, 10.2].forEach((start, k) => {
+  let i = 0;
+  for (let s = start; s < 18.6; s += .42, i++) spheres.push({ k, s, col: PAL[(i * 5 + k * 2) % 6], dur: 1.45 + R() * .4 });
+});
+const pool = [];
+for (let i = 0; i < 26; i++) {
+  const g = el("g", { opacity: 0 }, $("spheres"));
+  const halo = el("circle", { r: 10, opacity: .35 }, g);
+  const core = el("circle", { r: 5.5 }, g);
+  el("circle", { r: 2, cx: -1.6, cy: -1.6, fill: "#fff", opacity: .8 }, g);
+  pool.push({ g, halo, core });
+}
+// engranajes de la tarjeta
+document.querySelectorAll("#card .cg").forEach(s => {
+  s.innerHTML = `<path d="${gearPath(11, 9, 3)}" fill="#c9973f"/><circle r="3.2" fill="#f7e3bf"/>`;
+});
+
+/* ---------- Partículas (deterministas) ---------- */
+const puffs = [];
+{
+  const vents = [{ x: 484, y: 452, dx: 1.1, dy: -.9 }, { x: 346, y: 124, dx: .25, dy: -1.2 }, { x: 40, y: 765, dx: -1, dy: -.6 }];
+  let i = 0;
+  for (let s = 8; s < 30; s += .2, i++) { const v = vents[i % 3]; puffs.push({ s: s + R() * .1, x: v.x, y: v.y, dx: v.dx + (R() - .5) * .4, dy: v.dy, life: 1.9, big: 1 }); }
+  for (let j = 0; j < 9; j++) { const a = R() * Math.PI * 2; puffs.push({ s: 12.8 + R() * .1, x: 300, y: 430, dx: Math.cos(a) * 1.6, dy: Math.sin(a) * 1.6, life: 1, big: .8 }); }
+}
+const items = [];
+for (let i = 0; i < 48; i++) {
+  items.push({ s: 14 + i * (4.4 / 48) + R() * .05, type: Math.floor(R() * 3), vx: (R() - .5) * 150, vy: -(120 + R() * 80),
+    spin: (R() - .5) * 5, size: 9 + R() * 7, ph: R() * 6, col: PAL[Math.floor(R() * 6)], col2: PAL[Math.floor(R() * 6)], life: 4.2 });
+}
+const CPAL = ["#ff7ad9", "#ffd166", "#5ff2e0", "#9b8cff", "#ff9a5c", "#7dffb0", "#fff3d6", "#e84a3c"];
+const confetti = [];
+for (let i = 0; i < 70; i++) confetti.push({ burst: 1, s: 25.85 + R() * .3, x0: 346, y0: 130, vx: (R() - .5) * 520, vy: -(260 + R() * 280),
+  w: 6 + R() * 5, h: 3 + R() * 3, rot: R() * 6, rs: (R() - .5) * 12, fs: 4 + R() * 8, col: CPAL[Math.floor(R() * 8)] });
+for (let i = 0; i < 170; i++) confetti.push({ burst: 0, s: 25.9 + R() * 3, x0: R() * 540, y0: -20 - R() * 60, vy: 110 + R() * 130,
+  amp: 12 + R() * 26, f: 1.6 + R() * 2.6, ph: R() * 6, w: 6 + R() * 5, h: 3 + R() * 3, rot: R() * 6, rs: (R() - .5) * 10, fs: 4 + R() * 8, col: CPAL[Math.floor(R() * 8)] });
+const twinkles = [];
+for (let i = 0; i < 16; i++) {
+  const side = i % 4; let x, y;
+  if (side === 0) { x = 60 + R() * 420; y = 150 + R() * 20; }
+  else if (side === 1) { x = 60 + R() * 420; y = 505 + R() * 25; }
+  else if (side === 2) { x = 30 + R() * 25; y = 180 + R() * 320; }
+  else { x = 485 + R() * 25; y = 180 + R() * 320; }
+  twinkles.push({ x, y, s: 21.6 + R() * 1.5, ph: R() * 6, sp: 2 + R() * 2, r: 4 + R() * 5 });
+}
+
+/* ---------- Canvas ---------- */
+const cv = $("fx"), ctx = cv.getContext("2d");
+let cscale = 1;
+function resize() {
+  const r = stage.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  cscale = cv.width / 540;
+}
+new ResizeObserver(resize).observe(stage); resize();
+
+function star(r) { ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); }
+function flower(r, c1) { ctx.fillStyle = c1; for (let i = 0; i < 5; i++) { const a = i * Math.PI * 2 / 5; ctx.beginPath(); ctx.arc(Math.cos(a) * r * .55, Math.sin(a) * r * .55, r * .48, 0, 7); ctx.fill(); } ctx.fillStyle = "#ffe27a"; ctx.beginPath(); ctx.arc(0, 0, r * .34, 0, 7); ctx.fill(); }
+function gift(r, c1, c2) {
+  ctx.fillStyle = c1; ctx.fillRect(-r * .8, -r * .6, r * 1.6, r * 1.4);
+  ctx.fillStyle = "rgba(255,255,255,.22)"; ctx.fillRect(-r * .8, -r * .6, r * 1.6, r * .35);
+  ctx.fillStyle = c2; ctx.fillRect(-r * .16, -r * .6, r * .32, r * 1.4); ctx.fillRect(-r * .8, -r * .1, r * 1.6, r * .26);
+  ctx.beginPath(); ctx.ellipse(-r * .3, -r * .75, r * .3, r * .18, -.5, 0, 7); ctx.ellipse(r * .3, -r * .75, r * .3, r * .18, .5, 0, 7); ctx.fill();
+}
+
+function drawFX(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.setTransform(cscale, 0, 0, cscale, 0, 0);
+  // vapor
+  for (const p of puffs) {
+    const a = t - p.s; if (a < 0 || a > p.life) continue;
+    const k = a / p.life, x = p.x + p.dx * a * 42, y = p.y + p.dy * a * 42 - a * 10, r = (6 + a * 18) * p.big;
+    const al = .32 * (1 - k) * Math.min(1, a * 6);
+    ctx.fillStyle = `rgba(255,238,218,${al * .55})`; ctx.beginPath(); ctx.arc(x, y, r * 1.35, 0, 7); ctx.fill();
+    ctx.fillStyle = `rgba(255,244,230,${al})`; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+  }
+  // estrellas, flores y regalos
+  for (const it of items) {
+    const a = t - it.s; if (a < 0 || a > it.life) continue;
+    const x = 346 + it.vx * a + Math.sin(a * 3 + it.ph) * 9, y = 128 + it.vy * a + 75 * a * a;
+    const sc = Math.min(1, a / .22) * (a > it.life - .6 ? (it.life - a) / .6 : 1);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(it.ph + a * it.spin); ctx.scale(sc, sc); ctx.globalAlpha = Math.max(0, sc);
+    if (it.type === 0) { ctx.fillStyle = "#ffe27a"; ctx.shadowColor = "#ffcf5a"; ctx.shadowBlur = 10; star(it.size); }
+    else if (it.type === 1) flower(it.size, it.col === "#ffd166" ? "#ff9ad5" : it.col);
+    else gift(it.size, it.col, it.col2 === it.col ? "#fff3d6" : it.col2);
+    ctx.restore();
+  }
+  // estrellitas de mareo
+  if (t > 13.6 && t < 14.9) {
+    const k = 1 - seg(t, 14.4, 14.9);
+    for (let i = 0; i < 3; i++) {
+      const a = (t - 13.6) * 7 + i * Math.PI * 2 / 3;
+      ctx.save(); ctx.translate(robotHead.x + Math.cos(a) * 22, robotHead.y + Math.sin(a) * 6); ctx.globalAlpha = k;
+      ctx.fillStyle = "#ffe27a"; star(5); ctx.restore();
+    }
+  }
+  // brillos alrededor de la tarjeta
+  for (const s of twinkles) {
+    if (t < s.s) continue;
+    const v = Math.max(0, Math.sin((t - s.s) * s.sp + s.ph)); const a = Math.pow(v, 3) * seg(t, s.s, s.s + .4);
+    if (a <= .01) continue;
+    ctx.save(); ctx.translate(s.x, s.y); ctx.globalAlpha = a; ctx.fillStyle = "#fff3c4";
+    ctx.beginPath(); const r = s.r * (.6 + v * .5);
+    ctx.moveTo(0, -r); ctx.quadraticCurveTo(0, 0, r, 0); ctx.quadraticCurveTo(0, 0, 0, r); ctx.quadraticCurveTo(0, 0, -r, 0); ctx.quadraticCurveTo(0, 0, 0, -r); ctx.fill();
+    ctx.restore();
+  }
+  // confeti
+  const k = 1.6, g = 430;
+  for (const c of confetti) {
+    const a = t - c.s; if (a < 0) continue;
+    let x, y;
+    if (c.burst) { const e = (1 - Math.exp(-k * a)) / k; x = c.x0 + c.vx * e + Math.sin(a * 3 + c.rot) * 10; y = c.y0 + (c.vy + g / k) * e - (g / k) * a; }
+    else { x = c.x0 + Math.sin(a * c.f + c.ph) * c.amp; y = c.y0 + c.vy * a; }
+    if (y > 990) continue;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(c.rot + a * c.rs); ctx.scale(1, Math.cos(a * c.fs));
+    ctx.fillStyle = c.col; ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h); ctx.restore();
+  }
+}
+
+/* ---------- Referencias ---------- */
+const E = {
+  lamps: [$("lamp0"), $("lamp1")], machine: $("machine"), chimney: $("chimney"), needle: $("needle"),
+  core: $("core"), coreHalo: $("coreHalo"), door: $("door"), doorShade: $("doorShade"), doorLight: $("doorLight"), rays,
+  slotLight: $("slotLight"), ding: $("ding"), btn: $("btn"), btnHi: $("btnHi"), card: $("nameCard"), cardWrap: $("cardWrap"),
+  robot: $("robot"), rShadow: $("rShadow"), rBody: $("rBody"), rWheel: $("rWheel"), rHead: $("rHead"), rArmR: $("rArmR"), rArmL: $("rArmL"),
+  eyesN: $("eyesN"), eyesX: $("eyesX"), eyesH: $("eyesH"), rAnt: $("rAnt"), rChest: $("rChest"), bolt: $("bolt"), dark: $("dark"),
+  fade: $("fade"), fcard: $("card"), closing: $("closing"), bar: $("bar")
+};
+const robotHead = { x: 60, y: 735 };
+
+/* ---------- Línea de tiempo ---------- */
+function gearIntegral(t) { const a = 7.2, b = 9; if (t < a) return 0; if (t < b) return (t - a) * (t - a) / (2 * (b - a)); return (b - a) / 2 + (t - b) + Math.max(0, t - 25.8) * .6; }
+function lampLevel(t) {
+  if (t < .35) return 0;
+  if (t < 1.3) { const f = [[.35, 1], [.45, 0], [.6, 1], [.72, 0], [.86, 1]]; let v = 0; for (const [tt, vv] of f) if (t >= tt) v = vv; return v; }
+  return .92 + .08 * Math.sin(t * 13) * Math.sin(t * 7.3) + (t > 25.8 ? .15 * Math.max(0, Math.sin((t - 25.8) * 10)) * (1 - seg(t, 26, 28)) : 0);
+}
+
+function render(t) {
+  // intro
+  E.fade.style.opacity = 1 - smooth(seg(t, 0, 1.2));
+  const lamp = lampLevel(t);
+  E.lamps.forEach((l, i) => {
+    const x = i ? 440 : 100;
+    l.setAttribute("transform", `rotate(${Math.sin(t * 1.1 + i * 2) * 2.2} ${x} 0)`);
+    l.querySelector(".halo").setAttribute("opacity", lamp);
+    l.querySelector(".bulb").setAttribute("fill", lamp > .5 ? "#fff1c4" : "#6b5038");
+  });
+  const power = smooth(seg(t, 7.2, 9));
+  E.dark.setAttribute("opacity", (.62 - .24 * lamp) * (1 - smooth(seg(t, 7, 8.6))));
+
+  // engranajes
+  const G = gearIntegral(t) * 62;
+  gears.forEach(g => g.rot.setAttribute("transform", `rotate(${G * g.speed})`));
+
+  // máquina: hipo, temblor, bombeo final
+  const hop = -7 * Math.sin(Math.PI * seg(t, 7.0, 7.35));
+  const sh = 3 * seg(t, 11.4, 12.4) * (1 - seg(t, 12.8, 12.95));
+  const sx = Math.sin(t * 71) * sh, sy = Math.cos(t * 63) * sh * .6 + hop;
+  const pump = Math.sin(Math.PI * seg(t, 25.7, 26.15));
+  E.machine.setAttribute("transform", `translate(${270 + sx} ${780 + sy}) scale(${1 - .025 * pump} ${1 + .045 * pump}) translate(-270 -780)`);
+  const pop = Math.sin(Math.PI * seg(t, 13.85, 14.25));
+  E.chimney.setAttribute("transform", `translate(346 340) scale(${1 - .08 * pop} ${1 + .16 * pop}) translate(-346 -340)`);
+
+  // manómetro
+  const nd = -220 + 175 * power + 70 * seg(t, 11.4, 12.7) - 60 * seg(t, 12.8, 13.3) + Math.sin(t * 19) * 4 * power;
+  E.needle.setAttribute("transform", `rotate(${nd + 90} 278 298)`);
+
+  // núcleo del domo
+  if (power > 0) {
+    const hue = (t * 70) % 360;
+    E.core.setAttribute("fill", `hsl(${hue} 95% 66%)`);
+    E.core.setAttribute("r", 14 + 5 * power + Math.sin(t * 6) * 3 * power);
+    E.coreHalo.setAttribute("fill", `hsl(${hue} 95% 66%)`);
+    E.coreHalo.setAttribute("opacity", .55 * power);
+  } else { E.core.setAttribute("fill", "#6b4a33"); E.core.setAttribute("r", 14); E.coreHalo.setAttribute("opacity", 0); }
+
+  // tubos
+  [7.6, 8.6, 9.6].forEach((s, k) => glows[k].setAttribute("opacity", seg(t, s, s + .6) * (.62 + .25 * Math.sin(t * 7 + k * 2)) + (t > 25.8 ? .2 : 0)));
+
+  // esferas
+  let idx = 0;
+  for (const s of spheres) {
+    if (t < s.s || t > s.s + s.dur || idx >= pool.length) continue;
+    const p = ease((t - s.s) / s.dur), pt = paths[s.k].getPointAtLength(lens[s.k] * p), o = pool[idx++];
+    o.g.setAttribute("transform", `translate(${pt.x} ${pt.y})`); o.g.setAttribute("opacity", Math.min(1, (t - s.s) * 8, (s.s + s.dur - t) * 8));
+    o.halo.setAttribute("fill", s.col); o.core.setAttribute("fill", s.col);
+  }
+  for (; idx < pool.length; idx++) pool[idx].g.setAttribute("opacity", 0);
+
+  // bombillas
+  bulbs.forEach((b, i) => {
+    let on = power > .5 && ((Math.floor(t * 7) + i) % 3 === 0);
+    if (t > 25.8) on = Math.floor(t * 8) % 2 === i % 2;
+    b.setAttribute("fill", on ? PAL[i] : "#5a3a22");
+    b.setAttribute("filter", on ? "url(#fGlow)" : "none");
+  });
+
+  // puerta
+  const dp = ease(seg(t, 19.4, 20.4));
+  E.door.setAttribute("transform", `translate(196 590) scale(${1 - .9 * dp} 1) translate(-196 -590)`);
+  E.doorShade.setAttribute("opacity", dp * .45);
+  E.doorLight.setAttribute("opacity", seg(t, 19.3, 19.9));
+  E.rays.setAttribute("opacity", seg(t, 19.7, 20.4) * (1 - .55 * seg(t, 24, 26)));
+  E.rays.setAttribute("transform", `rotate(${t * 14} 270 590)`);
+
+  // ---- robot ----
+  const rx = kf(t, [[0, -80], [3, -80], [5.5, 85, eOut], [7.2, 85], [8, 60], [25, 60], [25.5, 112], [30, 112]]);
+  const moving = (t > 3 && t < 5.5) || (t > 7.2 && t < 8) || (t > 25 && t < 25.5);
+  const cw = seg(t, 14.6, 15) * (1 - seg(t, 18.6, 19));
+  let bob = moving ? -Math.abs(Math.sin(t * 16)) * 2.2 : Math.sin(t * 2.6) * 1.1;
+  bob -= cw * Math.abs(Math.sin(t * 5.5)) * 11;
+  let aR = kf(t, [[0, -45], [5.5, -45], [6.2, -15], [6.9, -15], [7.5, 70], [25.5, 70], [25.65, 4], [25.95, 4], [26.2, 70], [30, 70]]);
+  let aL = 110;
+  aR = lerp(aR, -70 + Math.sin(t * 11) * 22, cw);
+  aL = lerp(aL, -110 + Math.sin(t * 11 + 1.5) * 22, cw);
+  const ww = seg(t, 27, 27.5); aR = lerp(aR, -62 + Math.sin((t - 27) * 9) * 24, ww);
+  const follow = seg(t, 8.5, 9) * (1 - seg(t, 12.2, 12.6));
+  const hit = t >= 13.6 ? Math.exp(-(t - 13.6) * 3) * Math.sin((t - 13.6) * 20) : 0;
+  let headRot = Math.sin(t * 2.5) * 9 * follow + hit * 18 - 8 * seg(t, 19.3, 19.8) * (1 - seg(t, 23.2, 23.6));
+  const bow = kf(t, [[0, 0], [23.6, 0], [24.1, 28], [24.6, 28], [25, 0]]);
+  const bodyRot = bow + hit * 6;
+  E.robot.setAttribute("transform", `translate(${rx} ${850 + bob})`);
+  E.rShadow.setAttribute("transform", `translate(${rx} 850) scale(${1 + bob / 40} 1)`);
+  E.rWheel.setAttribute("transform", `rotate(${rx * 4.77} 0 -12)`);
+  E.rBody.setAttribute("transform", `rotate(${bodyRot} 0 -12)`);
+  E.rHead.setAttribute("transform", `rotate(${headRot} 0 -74)`);
+  E.rArmR.setAttribute("transform", `rotate(${aR} 22 -58)`);
+  E.rArmL.setAttribute("transform", `rotate(${aL} -20 -58)`);
+  robotHead.x = rx + 4; robotHead.y = 850 + bob - 112;
+
+  const xe = t >= 13.6 && t < 14.6;
+  const he = !xe && ((t >= 14.6 && t < 19.2) || (t >= 24 && t < 24.7) || t >= 26.2);
+  E.eyesX.setAttribute("opacity", xe ? 1 : 0);
+  E.eyesH.setAttribute("opacity", he ? 1 : 0);
+  E.eyesN.setAttribute("opacity", xe || he ? 0 : 1);
+  const blink = (t % 2.7) < .12 ? .12 : 1, wide = 1 + .35 * follow;
+  E.eyesN.setAttribute("transform", `translate(4 -91) scale(${wide} ${wide * blink}) translate(-4 91)`);
+  E.rAnt.setAttribute("fill", (t * 2) % 1 < .5 ? "#ff7a5c" : "#ffd166");
+  E.rChest.setAttribute("opacity", .6 + .4 * Math.sin(t * 5));
+
+  // tarjeta del nombre
+  if (t < 6.9) {
+    let cx, cy, cr;
+    if (t < 5.5) {
+      const a = aR * Math.PI / 180, px = rx + 22, py = 850 + bob - 58;
+      cx = px + Math.cos(a) * 36 + 2; cy = py + Math.sin(a) * 36 - 14; cr = -12 + Math.sin(t * 3) * 3;
+    } else if (t < 6.2) {
+      const p = ease(seg(t, 5.5, 6.2)); cx = lerp(134.5, 172, p); cy = lerp(752, 712, p); cr = lerp(-12, 0, p);
+    } else { cx = 172; cy = lerp(712, 760, ease(seg(t, 6.2, 6.9))); cr = 0; }
+    E.card.setAttribute("transform", `translate(${cx} ${cy}) rotate(${cr})`);
+    E.card.setAttribute("opacity", 1);
+    if (t >= 6.2) E.cardWrap.setAttribute("clip-path", "url(#slotClip)"); else E.cardWrap.removeAttribute("clip-path");
+  } else E.card.setAttribute("opacity", 0);
+
+  // ranura y botón
+  const ok = t >= 6.9;
+  E.slotLight.setAttribute("fill", ok ? "#7dffb0" : ((t * 2) % 1 < .5 && t > 3 ? "#ffb347" : "#7a4a22"));
+  const dg = seg(t, 6.9, 7.5);
+  E.ding.setAttribute("r", 6 + 34 * dg); E.ding.setAttribute("opacity", t >= 6.9 && t < 7.5 ? 1 - dg : 0);
+  const pressed = t >= 25.62 && t < 25.95;
+  E.btn.setAttribute("cy", pressed ? 798 : 795); E.btn.setAttribute("fill", pressed ? "#ff6a5a" : "#d93d30");
+  E.btnHi.setAttribute("cy", pressed ? 794 : 791);
+
+  // tuerca
+  if (t < 12.8) E.bolt.setAttribute("opacity", 0);
+  else {
+    let bx, by, br;
+    if (t < 13.6) { const p = seg(t, 12.8, 13.6); bx = lerp(300, 62, p); by = lerp(430, 736, p) - 150 * Math.sin(Math.PI * p); br = t * 900; }
+    else if (t < 14.1) { const p = seg(t, 13.6, 14.1); bx = lerp(62, 24, p); by = lerp(736, 843, p) - 45 * Math.sin(Math.PI * p); br = t * 600; }
+    else { bx = 24; by = 843; br = 30; }
+    E.bolt.setAttribute("opacity", 1); E.bolt.setAttribute("transform", `translate(${bx} ${by}) rotate(${br})`);
+  }
+
+  // tarjeta flotante
+  if (t < 20.5) { E.fcard.style.opacity = 0; }
+  else {
+    const p = seg(t, 20.5, 21.9);
+    const s = lerp(.08, 1, eBack(p)) * (1 + .03 * Math.sin(Math.PI * seg(t, 25.8, 26.3)));
+    const y = lerp(590, 336, eOut(p)) + (t > 21.9 ? Math.sin((t - 21.9) * 2) * 5 : 0);
+    const r = lerp(-14, 0, eOut(p)) + Math.sin(t * 1.7) * 1.1;
+    E.fcard.style.opacity = seg(t, 20.5, 20.9);
+    E.fcard.style.top = (y / 9.6) + "%";
+    E.fcard.style.transform = `translate(-50%,-50%) scale(${s}) rotate(${r}deg)`;
+  }
+  // cierre
+  const cp = smooth(seg(t, 27, 28.1));
+  E.closing.style.opacity = cp;
+  E.closing.style.transform = `translateY(${(1 - cp) * 14}px)`;
+
+  E.bar.style.width = (t / DUR * 100) + "%";
+  drawFX(t);
+}
+
+/* ---------- Textos ---------- */
+function applyTexts() {
+  const to = state.to.trim(), cn = $("cardName");
+  cn.textContent = to || "ti";
+  cn.setAttribute("font-size", Math.min(10, 80 / Math.max(1, (to || "ti").length)).toFixed(2));
+  $("toLabel").textContent = to ? "Para " + to : "";
+  $("toLabel").style.display = to ? "" : "none";
+  const m = state.msg.trim().match(/^(¡[^!]*!)\s*([\s\S]*)$/);
+  const h = $("headline"), b = $("body");
+  if (m) { h.textContent = m[1]; h.style.display = ""; b.textContent = m[2]; b.style.display = m[2] ? "" : "none"; }
+  else { h.style.display = "none"; b.textContent = state.msg.trim(); b.style.display = ""; }
+  $("fromLabel").textContent = state.from.trim();
+  document.title = to ? `Para ${to} — Máquina de Felicitaciones` : "Máquina de Felicitaciones";
+}
+
+/* ---------- Audio: música y efectos sintetizados ---------- */
+const Sound = (() => {
+  let ac = null, master = null, bus = null, noiseBuf = null, on = false, schedT = 0;
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  function ensure() {
+    if (ac) return true;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    ac = new AC();
+    const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
+    master = ac.createGain(); master.gain.value = .9; master.connect(comp); comp.connect(ac.destination);
+    noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return true;
+  }
+  function newBus() {
+    if (!ac) return;
+    if (bus) { const old = bus; old.gain.setTargetAtTime(0, ac.currentTime, .03); setTimeout(() => { try { old.disconnect(); } catch (e) {} }, 500); }
+    bus = ac.createGain(); bus.connect(master);
+  }
+  function env(g, w, a, peak, dec, hold) {
+    g.gain.setValueAtTime(.0001, w); g.gain.exponentialRampToValueAtTime(peak, w + a);
+    if (hold) g.gain.setValueAtTime(peak, w + a + hold);
+    g.gain.exponentialRampToValueAtTime(.0001, w + a + hold + dec);
+  }
+  function osc(type, f, w, dur, vol, o = {}) {
+    const { a = .005, hold = 0, f2 = null, glide = null, detune = 0, filter = null, q = 1, vib = 0, vibF = 6 } = o;
+    const end = w + a + hold + dur + .1;
+    const n = ac.createOscillator(); n.type = type; n.frequency.setValueAtTime(f, w);
+    if (f2) n.frequency.exponentialRampToValueAtTime(f2, w + (glide || dur)); n.detune.value = detune;
+    const g = ac.createGain(); env(g, w, a, vol, dur, hold);
+    let out = n;
+    if (filter) { const fl = ac.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = filter; fl.Q.value = q; n.connect(fl); out = fl; }
+    out.connect(g); g.connect(bus);
+    if (vib) { const l = ac.createOscillator(), lg = ac.createGain(); l.frequency.value = vibF; lg.gain.value = vib; l.connect(lg); lg.connect(n.frequency); l.start(w); l.stop(end); }
+    n.start(w); n.stop(end);
+  }
+  function noise(w, dur, vol, o = {}) {
+    const { type = "bandpass", f = 1000, f2 = null, q = 1, a = .005, hold = 0 } = o;
+    const s = ac.createBufferSource(); s.buffer = noiseBuf; s.loop = true;
+    const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, w);
+    if (f2) fl.frequency.exponentialRampToValueAtTime(f2, w + a + hold + dur); fl.Q.value = q;
+    const g = ac.createGain(); env(g, w, a, vol, dur, hold);
+    s.connect(fl); fl.connect(g); g.connect(bus);
+    s.start(w, Math.random()); s.stop(w + a + hold + dur + .1);
+  }
+  // instrumentos
+  const box = (m, w, v = .06) => { const f = mtof(m); osc("sine", f, w, 1.1, v); osc("sine", f * 2, w, .5, v * .35); osc("triangle", f * 4.01, w, .15, v * .1); };
+  const bell = (m, w, v = .07, d = 3) => { const f = mtof(m); osc("sine", f, w, d, v); osc("sine", f * 2, w, d * .6, v * .4); osc("sine", f * 3.01, w, d * .3, v * .18); };
+  const bass = (m, w) => osc("triangle", mtof(m), w, .42, .13, { filter: 900 });
+  const lead = (m, w, d) => osc("triangle", mtof(m), w, d * .6, .05, { a: .02, hold: d * .3, vib: 3, vibF: 5.5 });
+  const tick = (w, v = .014) => noise(w, .03, v, { type: "highpass", f: 6000 });
+  const wood = (w, f = 900, v = .05) => osc("sine", f, w, .06, v, { f2: f * .6, glide: .06 });
+  const beep = (ms, w, step = .09) => ms.forEach((m, i) => osc("square", mtof(m), w + i * step, .07, .025, { filter: 2600 }));
+  // efectos
+  const FX = {
+    flick: w => { noise(w, .02, .12, { type: "highpass", f: 3000 }); osc("sawtooth", 120, w, .08, .025, { filter: 600 }); },
+    whir: (w, d) => osc("sawtooth", 140, w, .15, .03, { a: .15, hold: Math.max(.05, d - .3), filter: 700, vib: 18, vibF: 9 }),
+    slide: w => noise(w, .3, .1, { f: 2600, f2: 900, q: 2, a: .02, hold: .2 }),
+    ding: w => { bell(88, w, .08, 1.2); bell(91, w + .09, .06, 1.2); },
+    thunk: w => { osc("sine", 120, w, .25, .28, { f2: 45, glide: .25 }); noise(w, .1, .12, { type: "lowpass", f: 300 }); },
+    power: w => { osc("sawtooth", 70, w, .5, .07, { a: .2, hold: 1.4, f2: 420, glide: 1.8, filter: 900, q: 4 }); osc("square", 35, w, .5, .035, { a: .3, hold: 1.2, f2: 110, glide: 1.8, filter: 300 }); },
+    steam: w => noise(w, .45, .035, { type: "highpass", f: 3500, a: .05, hold: .12 }),
+    blip: (w, m) => osc("sine", mtof(m), w, .12, .035, { f2: mtof(m + 5), glide: .08 }),
+    rattle: (w, d) => { for (let i = 0; i < d * 24; i++) osc("square", 260 + Math.random() * 420, w + i / 24 + Math.random() * .02, .03, .012 + .012 * (i / (d * 24)), { filter: 1800 }); },
+    whistle: (w, d) => { osc("sine", 1200, w, .2, .035, { a: .3, hold: d - .5, f2: 2400, glide: d, vib: 30, vibF: 7 }); noise(w, .2, .02, { f: 2400, q: 8, a: .3, hold: d - .5 }); },
+    pop: w => { osc("sine", 600, w, .2, .16, { f2: 120, glide: .18 }); noise(w, .05, .18, { type: "lowpass", f: 1500 }); },
+    boing: w => osc("sine", 300, w, .55, .11, { f2: 150, glide: .5, vib: 40, vibF: 14 }),
+    bonk: w => { wood(w, 700, .18); osc("sine", 1400, w, .15, .05); },
+    tweet: w => { for (let i = 0; i < 3; i++) osc("sine", 2600, w + i * .16, .1, .04, { f2: 1800, glide: .1 }); },
+    cork: w => { osc("sine", 800, w, .12, .18, { f2: 300, glide: .08 }); noise(w, .08, .12, { f: 1200 }); },
+    creak: w => osc("sawtooth", 90, w, .3, .045, { a: .05, hold: .6, f2: 160, glide: .9, filter: 1200, q: 6, vib: 12, vibF: 11 }),
+    shimmer: w => { const s = [0, 2, 4, 7, 9]; for (let i = 0; i < 10; i++) osc("sine", mtof(84 + s[i % 5] + 12 * Math.floor(i / 5)), w + i * .07, .8, .03); },
+    press: w => { noise(w, .02, .12, { type: "highpass", f: 3000 }); wood(w, 1500, .07); },
+    cannon: w => { osc("sine", 90, w, .6, .32, { f2: 35, glide: .5 }); noise(w, .4, .26, { type: "lowpass", f: 3000, f2: 400 }); },
+    horn: w => osc("sawtooth", mtof(67), w, .15, .045, { a: .03, hold: .35, f2: mtof(79), glide: .25, filter: 2500 }),
+    crackle: w => noise(w, .02, .03 + Math.random() * .03, { type: "highpass", f: 4000 + Math.random() * 3000 })
+  };
+
+  // ---- Línea de tiempo sonora ----
+  const EV = [];
+  const at = (tt, fn) => EV.push({ t: tt, fn });
+  // efectos
+  [.35, .6, .86].forEach(x => at(x, FX.flick));
+  at(3.0, w => FX.whir(w, 2.5)); at(3.2, w => beep([76, 79], w)); at(5.4, w => beep([79, 76, 84], w));
+  at(6.2, FX.slide); at(6.9, FX.ding); at(7.0, FX.thunk); at(7.2, FX.power); at(7.2, w => FX.whir(w, .8));
+  for (let x = 8.4; x < 29; x += 1.6) if (x < 25.5 || x > 26.5) at(x, FX.steam);
+  const PENTA = [72, 74, 76, 79, 81, 84];
+  spheres.forEach((s, i) => at(s.s, w => FX.blip(w, PENTA[(i * 2 + s.k) % 6])));
+  at(11.4, w => FX.rattle(w, 1.4)); at(11.6, w => FX.whistle(w, 1.2));
+  at(12.8, FX.pop); at(12.82, FX.boing); at(13.6, FX.bonk); at(13.7, FX.tweet); at(14.05, w => beep([72, 67, 64], w, .12));
+  at(13.9, FX.cork);
+  items.forEach((it, i) => { if (i % 2 === 0) at(it.s, w => box(PENTA[i % 6] + 12, w, .025)); });
+  at(14.7, w => beep([76, 79, 84, 88], w));
+  at(19.4, FX.creak); at(20.5, FX.shimmer); at(21.8, w => bell(84, w, .05, 2));
+  at(24.1, w => beep([84, 79], w, .14)); at(25.0, w => FX.whir(w, .5));
+  at(25.62, FX.press); at(25.82, FX.cannon); at(25.86, FX.horn);
+  for (let i = 0; i < 22; i++) at(26 + i * .1 + Math.random() * .05, FX.crackle);
+  at(27.2, w => beep([84, 88, 91], w, .1));
+  // música (112 bpm, C–Am–F–G)
+  const BEAT = 60 / 112, BAR = BEAT * 4, START = 1.2;
+  const CH = [[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]], ROOT = [48, 45, 41, 43];
+  const ARP = [0, 1, 2, 3, 2, 1, 0, 1];
+  const MR = rng(99); let prev = 76;
+  for (let b = 0; b < 12; b++) {
+    const t0 = START + b * BAR, ch = CH[b % 4];
+    const tones = [ch[0] + 12, ch[1] + 12, ch[2] + 12, ch[0] + 24];
+    ARP.forEach((ix, e) => { const tt = t0 + e * BEAT / 2; if (tt < 25.8) at(tt, w => box(tones[ix], w, b < 3 ? .055 : .042)); });
+    if (b >= 3) {
+      [0, 2].forEach(bt => { const tt = t0 + bt * BEAT; if (tt < 25.8) at(tt, w => bass(ROOT[b % 4], w)); });
+      for (let e = 1; e < 8; e += 2) { const tt = t0 + e * BEAT / 2; if (tt < 25.8) at(tt, w => tick(w)); }
+      [1, 3].forEach(bt => { const tt = t0 + bt * BEAT; if (tt < 25.8) at(tt, w => wood(w, 950, .03)); });
+    }
+    if (b >= 3 && b <= 10) {
+      const pool = ch.flatMap(n => [n + 12, n + 24]).filter(n => n >= 69 && n <= 86);
+      for (let bt = 0; bt < 3; bt++) {
+        const near = pool.slice().sort((x, y) => Math.abs(x - prev) - Math.abs(y - prev)).filter(n => n !== prev);
+        const m = near[Math.floor(MR() * Math.min(3, near.length))]; prev = m;
+        const tt = t0 + bt * BEAT, d = bt === 2 ? BEAT * 2 : BEAT;
+        at(tt, w => lead(m, w, d));
+      }
+    }
+  }
+  // fanfarria y final
+  [67, 71, 74, 79].forEach((m, i) => at(25.8 + i * .12, w => osc("sawtooth", mtof(m), w, .35, .04, { a: .02, hold: .1, filter: 2200 })));
+  at(26.9, w => {
+    [72, 76, 79, 84].forEach(m => bell(m, w, .05, 3.2));
+    [48, 60, 64, 67].forEach((m, i) => osc("sawtooth", mtof(m), w, 2.4, .02, { a: .4, hold: .6, filter: 1400, detune: i % 2 ? 7 : -7 }));
+  });
+  at(28.2, w => { box(91, w, .04); box(96, w + .15, .04); });
+  EV.sort((x, y) => x.t - y.t);
+
+  return {
+    get on() { return on; },
+    setOn(v, tNow) {
+      if (v) {
+        if (!ensure()) return false;
+        ac.resume && ac.resume();
+        on = true; newBus(); schedT = tNow;
+      } else { on = false; newBus(); }
+      return on;
+    },
+    resume() { if (ac && ac.state === "suspended") ac.resume(); },
+    reset(tNow, keepTail) { if (!on) return; if (!keepTail) newBus(); schedT = tNow; },
+    tick(tNow) {
+      if (!on || !ac || !bus || ac.state !== "running") return;
+      const until = tNow + .15;
+      for (const ev of EV) {
+        if (ev.t <= schedT) continue;
+        if (ev.t > until) break;
+        try { ev.fn(ac.currentTime + Math.max(0, ev.t - tNow)); } catch (e) {}
+      }
+      schedT = until;
+    }
+  };
+})();
+
+/* ---------- Reproducción ---------- */
+let t = 0, playing = true, last = null;
+function setPlaying(v, keepTail) {
+  playing = v;
+  $("playIcon").setAttribute("d", v ? "M7 5h3v14H7zM14 5h3v14h-3z" : "M8 5l11 7-11 7z");
+  if (v) stage.classList.remove("ended");
+  Sound.reset(t, keepTail);
+  poke();
+}
+function restart() { t = 0; last = null; setPlaying(true); Sound.reset(-.001); }
+function frame(now) {
+  if (last == null) last = now;
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (playing) {
+    t += dt;
+    if (t >= DUR) {
+      if (state.loop) { t = 0; Sound.reset(-.001); }
+      else { t = DUR; setPlaying(false, true); stage.classList.add("ended"); stage.classList.remove("idle"); }
+    }
+    if (playing) Sound.tick(t);
+  }
+  render(t);
+  requestAnimationFrame(frame);
+}
+
+/* ---------- Interfaz ---------- */
+let idleTimer;
+function poke() {
+  stage.classList.remove("idle"); clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => { if (playing && $("panel").hidden) stage.classList.add("idle"); }, 2500);
+}
+["mousemove", "touchstart", "keydown"].forEach(ev => stage.addEventListener(ev, poke, { passive: true }));
+$("bPlay").onclick = () => { if (t >= DUR) restart(); else setPlaying(!playing); };
+$("bRestart").onclick = restart;
+function setSound(v) {
+  const ok = Sound.setOn(v, t);
+  const b = $("bSound"); b.classList.remove("hint");
+  b.setAttribute("aria-pressed", ok ? "true" : "false");
+  b.setAttribute("aria-label", ok ? "Desactivar sonido" : "Activar sonido");
+  b.title = ok ? "Sonido: encendido (M)" : "Sonido: apagado (M)";
+  $("sndOn").style.display = ok ? "" : "none"; $("sndOff").style.display = ok ? "none" : "";
+  try { localStorage.setItem("maquina-sonido", ok ? "1" : "0"); } catch (e) {}
+}
+$("bSound").onclick = () => setSound(!Sound.on);
+try { if (localStorage.getItem("maquina-sonido") === "1") setSound(true); } catch (e) {}
+document.addEventListener("pointerdown", () => Sound.resume(), { passive: true });
+let wasPlaying = true;
+function openPanel() {
+  wasPlaying = playing; setPlaying(false);
+  $("fTo").value = state.to; $("fMsg").value = state.msg; $("fFrom").value = state.from; $("fLoop").checked = state.loop;
+  $("panel").hidden = false; setTimeout(() => $("fTo").focus(), 30);
+}
+function closePanel() { $("panel").hidden = true; if (wasPlaying && t < DUR) setPlaying(true); }
+$("bEdit").onclick = openPanel;
+$("close").onclick = closePanel;
+$("panel").addEventListener("click", e => { if (e.target.id === "panel") closePanel(); });
+function readForm() {
+  state.to = $("fTo").value; state.msg = $("fMsg").value || DEF.msg; state.from = $("fFrom").value; state.loop = $("fLoop").checked;
+}
+$("form").onsubmit = e => { e.preventDefault(); readForm(); applyTexts(); $("panel").hidden = true; restart(); };
+function toast(msg) { const el = $("toast"); el.textContent = msg; el.classList.add("show"); setTimeout(() => el.classList.remove("show"), 1800); }
+$("copy").onclick = async () => {
+  readForm(); applyTexts();
+  const q = new URLSearchParams({ para: state.to, msg: state.msg, de: state.from });
+  if (state.loop) q.set("loop", "1");
+  const url = location.href.split(/[?#]/)[0] + "?" + q.toString();
+  try { await navigator.clipboard.writeText(url); toast("Enlace copiado"); }
+  catch (e) { window.prompt("Copia este enlace:", url); }
+};
+document.addEventListener("keydown", e => {
+  if (!$("panel").hidden) { if (e.key === "Escape") closePanel(); return; }
+  if (e.code === "Space") { e.preventDefault(); $("bPlay").click(); }
+  if (e.key === "r" || e.key === "R") restart();
+  if (e.key === "m" || e.key === "M") $("bSound").click();
+});
+
+window.__seek = s => { t = clamp(s, 0, DUR); };
+applyTexts();
+render(0);
+const start = () => { restart(); requestAnimationFrame(frame); };
+if (document.fonts && document.fonts.ready) Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1200))]).then(start);
+else start();
+})();
+</script>
+</body>
+</html>

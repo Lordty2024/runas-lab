@@ -1,0 +1,381 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Escáner RUTA Circular</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Concepto: ficha técnica de laboratorio de materiales. Cabecera verde bosque, cuerpo claro, avisos en ámbar. */
+:root{
+  --bg:#f3f6f2; --surface:#ffffff; --ink:#14231a; --muted:#566559; --line:#d5ddd3;
+  --green:#1c5a37; --green-ink:#ffffff; --lime:#b6e36a; --soft:#e4efe2;
+  --amber-bg:#fff1d6; --amber-ink:#6b4400; --amber-line:#e8c27a;
+  --hi:#a3262a; --hi-bg:#fbe3e1; --mid:#8a5a00; --mid-bg:#fdecc8; --lo:#1c5a37; --lo-bg:#dcefdc;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1812; --surface:#17241b; --ink:#e6efe6; --muted:#9db1a0; --line:#2b3d30;
+  --green:#7fcf93; --green-ink:#0d1a11; --lime:#b6e36a; --soft:#1d3024;
+  --amber-bg:#3a2d10; --amber-ink:#f3d58d; --amber-line:#6b5420;
+  --hi:#ff9d98; --hi-bg:#3d1b1c; --mid:#f2c36b; --mid-bg:#3a2d10; --lo:#8fe0a3; --lo-bg:#1b3523; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1812; --surface:#17241b; --ink:#e6efe6; --muted:#9db1a0; --line:#2b3d30;
+  --green:#7fcf93; --green-ink:#0d1a11; --lime:#b6e36a; --soft:#1d3024;
+  --amber-bg:#3a2d10; --amber-ink:#f3d58d; --amber-line:#6b5420;
+  --hi:#ff9d98; --hi-bg:#3d1b1c; --mid:#f2c36b; --mid-bg:#3a2d10; --lo:#8fe0a3; --lo-bg:#1b3523; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+.wrap{max-width:760px;margin:0 auto}
+header.top{background:var(--green);color:var(--green-ink);margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px))) 0 calc(-1*max(16px,env(safe-area-inset-right,0px)));padding:18px max(16px,env(safe-area-inset-right,0px)) 18px max(16px,env(safe-area-inset-left,0px))}
+header.top .wrap{display:flex;flex-direction:column;gap:4px}
+.brand{font:500 11px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+h1{font:700 28px/1.1 var(--f-display);margin:0;text-wrap:balance}
+.ruta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ruta span{font:500 11px var(--f-mono);padding:3px 8px;border:1px solid currentColor;border-radius:99px;opacity:.9}
+.ruta span.on{background:var(--lime);color:#14231a;border-color:var(--lime);opacity:1}
+.prelim{margin:14px 0;background:var(--amber-bg);color:var(--amber-ink);border:1px solid var(--amber-line);padding:10px 12px;border-radius:6px;font-size:13px}
+.prelim b{font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.tabs{display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.tabs button{flex:1;padding:11px 6px;border:0;background:transparent;color:var(--muted);font:600 14px var(--f-body);cursor:pointer;min-width:0}
+.tabs button[aria-selected="true"]{background:var(--green);color:var(--green-ink)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;margin-top:12px;display:flex;flex-direction:column;gap:14px}
+label,.lbl{font:500 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+select,textarea{width:100%;font:15px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px}
+textarea{min-height:84px;resize:vertical}
+:focus-visible{outline:3px solid var(--lime);outline-offset:2px}
+.btn{font:600 15px var(--f-body);border:0;border-radius:6px;padding:12px 16px;cursor:pointer;background:var(--green);color:var(--green-ink)}
+.btn.ghost{background:transparent;color:var(--green);border:1px solid var(--green)}
+.btn[disabled]{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.drop{border:1.5px dashed var(--green);border-radius:8px;padding:18px;text-align:center;background:var(--soft);display:flex;flex-direction:column;align-items:center;gap:10px}
+.drop img{max-height:220px;border-radius:6px}
+.files{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left}
+.files>div{display:flex;flex-direction:column;gap:4px}
+.files input[type=file]{width:100%;min-height:48px;font:15px var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--green);border-radius:6px;padding:6px}
+.files input[type=file]::file-selector-button{font:600 15px var(--f-body);background:var(--green);color:var(--green-ink);border:0;border-radius:5px;padding:10px 14px;margin-right:10px;cursor:pointer}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:6px 10px;border-radius:99px;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--green);color:var(--green-ink);border-color:var(--green)}
+.note{font-size:13px;color:var(--muted)}
+#out{margin-top:18px;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.card h2{font:700 18px var(--f-display);margin:0 0 10px}
+.card h2 small{font:500 11px var(--f-mono);letter-spacing:.08em;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:2px}
+.id-name{font:700 24px/1.15 var(--f-display);text-wrap:balance}
+.conf{display:flex;align-items:center;gap:10px;margin-top:8px}
+.bar{flex:1;height:8px;background:var(--soft);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green)}
+.mono{font-family:var(--f-mono);font-size:12px}
+ul.plain{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+ul.plain li{padding-left:0}
+.item{display:flex;gap:10px;align-items:flex-start}
+.item>div{min-width:0;flex:1}
+.pill{flex:none;font:600 11px var(--f-mono);padding:3px 8px;border-radius:4px;letter-spacing:.04em;text-transform:uppercase}
+.pill.A{background:var(--hi-bg);color:var(--hi)} .pill.M{background:var(--mid-bg);color:var(--mid)} .pill.B{background:var(--lo-bg);color:var(--lo)}
+.via.A,.via.M,.via.B{}
+.act{font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--green)}
+.yes li::before{content:"Sí  ";font:600 11px var(--f-mono);color:var(--lo)}
+.no li::before{content:"No  ";font:600 11px var(--f-mono);color:var(--hi)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.two{grid-template-columns:1fr}}
+.next{background:var(--green);color:var(--green-ink);border-radius:8px;padding:16px}
+.next h2{color:inherit}
+.next small{color:inherit;opacity:.8}
+.alert{background:var(--amber-bg);color:var(--amber-ink);border:1px solid var(--amber-line);border-radius:8px;padding:12px 14px;font-size:14px}
+details{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:12px 16px;margin-top:18px}
+summary{cursor:pointer;font:600 14px var(--f-body)}
+details p,details li{font-size:13.5px;color:var(--muted)}
+.err{background:var(--hi-bg);color:var(--hi);padding:12px;border-radius:6px;font-size:14px}
+.spin{display:flex;align-items:center;gap:10px;color:var(--muted)}
+.spin::before{content:"";width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--green);border-radius:50%;animation:r 1s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin::before{animation:none}}
+footer{margin-top:24px;font-size:12px;color:var(--muted)}
+</style>
+
+<header class="top"><div class="wrap">
+  <div class="brand">RUNAS VERDES · Impulso Circular</div>
+  <h1>Escáner de empaques</h1>
+  <div class="ruta" aria-label="Metodología RUTA Circular"><span class="on">R · Reconocer</span><span>U · Ubicar</span><span>T · Testear</span><span>A · Acreditar</span></div>
+</div></header>
+
+<main class="wrap">
+  <div class="prelim"><b>Diagnóstico preliminar</b><br>Primer paso del R de RUTA Circular. Orienta el trabajo, no certifica material, desempeño ni claims. Todo se valida con datos del cliente y del proveedor.</div>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button role="tab" aria-selected="true" data-t="foto">Foto</button>
+    <button role="tab" aria-selected="false" data-t="desc">Descripción</button>
+    <button role="tab" aria-selected="false" data-t="guia">Guiado</button>
+  </div>
+
+  <section class="panel" id="p-foto">
+    <div class="drop">
+      <img id="prev" alt="Vista previa del empaque" hidden>
+      <div id="dropmsg">Toma una foto del empaque o sube una imagen. Si se ve el código de resina o la etiqueta, mejor.</div>
+      <div class="files">
+        <div><label for="cam">Tomar foto con la cámara</label><input type="file" id="cam" accept="image/*" capture="environment"></div>
+        <div><label for="gal">Elegir de la galería</label><input type="file" id="gal" accept="image/*"></div>
+      </div>
+      <div class="note">Si la cámara no abre dentro de la app, toma la foto con la cámara normal del celular y súbela desde la galería.</div>
+    </div>
+    <div><label for="nota-foto">Contexto opcional</label>
+      <textarea id="nota-foto" placeholder="Ej.: botella de 500 ml para agua, la llena un cliente en Lima, sale por delivery."></textarea></div>
+    <div class="row"><button class="btn" id="go-foto" disabled>Escanear empaque</button><button class="btn ghost" id="stop" hidden>Detener</button></div>
+    <div class="note" id="foto-note"></div>
+  </section>
+
+  <section class="panel" id="p-desc" hidden>
+    <div><label for="txt">Describe el empaque</label>
+      <textarea id="txt" placeholder="Ej.: vaso de 12 oz para café caliente, parece cartón con interior brillante, tapa negra de plástico duro."></textarea></div>
+    <div><div class="lbl" style="margin-bottom:6px">Ejemplos rápidos</div>
+      <div class="chips" id="ejemplos"></div></div>
+    <div class="row"><button class="btn" id="go-desc">Generar diagnóstico</button></div>
+    <div class="note" id="desc-note"></div>
+  </section>
+
+  <section class="panel" id="p-guia" hidden>
+    <div class="note">Funciona sin foto y sin conexión a Claude. Usa solo la base de conocimiento de RUNAS VERDES.</div>
+    <div><label for="g-mat">Material (lo que crees que es)</label><select id="g-mat"></select></div>
+    <div><label for="g-uso">Uso del empaque</label><select id="g-uso"></select></div>
+    <div class="row"><button class="btn" id="go-guia">Generar diagnóstico</button></div>
+  </section>
+
+  <div id="out" aria-live="polite"></div>
+
+  <details><summary>Marco normativo que usa el escáner (revisado oct. 2026)</summary>
+    <ul>
+      <li><b>Ley 30884</b> y D.S. 006-2019-MINAM: restricciones a plásticos de un solo uso y envases descartables. Art. 10: contenido mínimo de 15 % de PET reciclado (PET-PCR) en botellas. Art. 11: certificado de biodegradabilidad (NTP 900.080) para quien declare biodegradable.</li>
+      <li>Proyectos PL 12221/2025-CR y 12464/2025-CR: proponen subir el mínimo de 15 % a 30 % y recolección local. Siguen pendientes.</li>
+      <li><b>Indecopi</b>, Guía de Publicidad Ambiental (2023): multas de hasta 700 UIT por claims ambientales sin sustento. Con UIT 2026 = S/ 5,500, equivale a unos S/ 3.85 millones.</li>
+      <li><b>NIIF S1/S2</b> (Res. 001-2026-EF/30, 25 mar. 2026): obligatorias desde 1 ene. 2029 para empresas desde 2,300 UIT (S/ 12.65 millones).</li>
+      <li><b>UE, Reglamento 2025/40 (PPWR)</b>: aplica desde el 12 ago. 2026; incluye límites a PFAS en empaques en contacto con alimentos. Relevante para exportadores.</li>
+    </ul>
+    <p>Las referencias a la ley deben confirmarse con el texto vigente antes de usarlas en un informe al cliente.</p>
+  </details>
+  <footer>RUNAS VERDES · Escáner preliminar. Material de referencia general marcado “por validar vía RFI” hasta tener datos del proveedor.</footer>
+</main>
+
+<script>
+/* ===== Base de conocimiento (corregida y actualizada) ===== */
+const KB = {
+ filtros: ["Desempeño real","Costo total por uso","Disponibilidad local","Fin de vida realista","Sustento del claim","Compatibilidad operativa"],
+ reglaOro: "El mejor material es el que gana la matriz para ese cliente y ese uso.",
+ mats: {
+  pet:{n:"PET (resina 1)",fam:"02 PET / rPET-PCR",quees:"Poliéster transparente, rígido, buena barrera al gas.",usos:"Botellas de agua y bebidas, bandejas, clamshells.",fort:"Transparencia, reciclabilidad con acopio existente, rPET disponible.",grieta:"Sensible al calor (no apto para llenado en caliente sin grado especial). Colorantes y etiquetas de PVC o manga que no se separa bajan el valor de reciclaje.",claim:"“Reciclable” solo si hay acopio real y el conjunto (tapa, etiqueta) es compatible. “Contiene X % reciclado” solo con trazabilidad.",fin:"Es el plástico con mejor circuito de acopio y venta en Perú, pero depende de la zona.",alt:["rpet","vidrio","aluminio"],calor:60,reg:"Botellas: art. 10 Ley 30884, mínimo 15 % PET-PCR."},
+  rpet:{n:"rPET / PET-PCR",fam:"02 PET / rPET-PCR",quees:"PET con contenido posconsumo.",usos:"Botellas, bandejas, láminas.",fort:"Reduce resina virgen; cumple la exigencia de contenido reciclado.",grieta:"Disponibilidad y precio del grado alimentario; el porcentaje real exige certificado del proveedor.",claim:"Declarar el % solo con certificado y trazabilidad del lote.",fin:"Igual que PET.",alt:["pet"],calor:60,reg:"Ley 30884 art. 10 (15 %); proyectos de ley proponen 30 %."},
+  hdpe:{n:"HDPE (resina 2)",fam:"Plástico de partida · por validar vía RFI",quees:"Polietileno de alta densidad, opaco y resistente.",usos:"Botellas de leche y limpieza, bidones, tapas.",fort:"Resistencia a impactos y a químicos; buen reciclaje mecánico.",grieta:"Poca visibilidad del contenido; tapas y etiquetas de otros polímeros mezclan la corriente.",claim:"“Reciclable” sujeto a acopio local.",fin:"Se acopia y vende, con menos liquidez que PET.",alt:["pppcr","vidrio"],calor:80,reg:""},
+  pvc:{n:"PVC (resina 3)",fam:"Plástico de partida · por validar vía RFI",quees:"Cloruro de polivinilo, rígido o flexible.",usos:"Blísteres, film, etiquetas manga, tuberías.",fort:"Barrera y transparencia.",grieta:"Contamina el reciclaje de PET; aditivos y cloro.",claim:"Evitar claims ambientales positivos.",fin:"Casi sin circuito de reciclaje.",alt:["pet","pp","carton"],calor:60,reg:"Tendencia regulatoria desfavorable."},
+  ldpe:{n:"LDPE / film (resina 4)",fam:"Plástico de partida · por validar vía RFI",quees:"Polietileno de baja densidad, flexible.",usos:"Bolsas, film, stretch, sobres.",fort:"Barato, sello fácil, barrera a humedad.",grieta:"Film sucio o multicapa no se recicla; acopio débil.",claim:"“Reciclable” rara vez sostenible sin circuito.",fin:"Acopio informal, bajo valor.",alt:["reduccion","pppcr"],calor:70,reg:"Bolsas y sorbetes: restricciones de Ley 30884."},
+  pp:{n:"PP (resina 5)",fam:"03 PP-PCR",quees:"Polipropileno, semirrígido, tolera calor.",usos:"Tapas de vaso, potes de comida, vasos, tarros.",fort:"Resistencia térmica, apto para microondas, costo.",grieta:"PP-PCR de grado alimentario aún limitado; contaminación por olores.",claim:"“Reciclable” según circuito; PCR solo con certificado.",fin:"Acopio creciente pero menos estable que PET.",alt:["pppcr","fibra","carton"],calor:100,reg:"Sin norma específica de contenido hoy; sigue el tema de descartables."},
+  pppcr:{n:"PP-PCR",fam:"03 PP-PCR",quees:"PP con contenido posconsumo.",usos:"Vasos, potes, tapas.",fort:"Mantiene desempeño térmico con menor huella de resina virgen.",grieta:"Proveedor local limitado, especificación alimentaria por validar.",claim:"% solo con certificado.",fin:"Igual que PP.",alt:["pp"],calor:100,reg:""},
+  ps:{n:"PS / EPS (resina 6)",fam:"Plástico de partida · por validar vía RFI",quees:"Poliestireno sólido o expandido (tecnopor).",usos:"Vasos, bandejas, cajas de comida, protección.",fort:"Aislante y barato.",grieta:"Prácticamente sin reciclaje; EPS con restricciones para alimentos y bebidas.",claim:"No sostener claims positivos.",fin:"Sin circuito.",alt:["fibra","carton","pp"],calor:70,reg:"Ley 30884 restringe EPS para alimentos y bebidas en gastronomía. Confirmar alcance con el texto vigente."},
+  lam:{n:"Laminado multicapa",fam:"Plástico de partida · por validar vía RFI",quees:"Capas de plástico, aluminio o papel unidas en un solo envase.",usos:"Snacks, sachets, café, bebidas en caja.",fort:"Barrera alta y vida útil larga con poco peso.",grieta:"No separable, casi no reciclable; claims fáciles de cuestionar.",claim:"Evitar “reciclable”.",fin:"Sin circuito práctico.",alt:["monomat","reduccion","carton"],calor:70,reg:""},
+  carton:{n:"Cartón con recubrimiento",fam:"01 Cartón y fibra moldeada",quees:"Cartón o papel con película de PE, PLA o base acuosa.",usos:"Vasos, cajas de comida, bandejas.",fort:"Renovable, buena percepción, imprimible.",grieta:"El recubrimiento define la reciclabilidad: PE es difícil de separar, el acuoso depende de la barrera real. Resistencia a grasa y líquido caliente debe probarse (por ejemplo, 60 min de filtración).",claim:"“Reciclable” o “compostable” solo con ensayo y circuito; en vasos, aclarar el recubrimiento.",fin:"El papel se acopia; con PE el rechazo es alto.",alt:["fibra","pppcr"],calor:95,reg:"Si declara compostable o biodegradable: certificado art. 11 Ley 30884."},
+  fibra:{n:"Fibra moldeada (bagazo, bambú, kraft)",fam:"01 Cartón y fibra moldeada",quees:"Pulpa de fibra vegetal moldeada y prensada.",usos:"Bandejas, potes, clamshells, vasos.",fort:"Rígida, soporta calor, origen agrícola.",grieta:"Humedad y grasa sin tratamiento; posibles PFAS en barreras de grasa de algunos proveedores; costo y logística.",claim:"“Compostable” solo con certificado y circuito de compostaje real. Pedir declaración libre de PFAS.",fin:"Compostaje industrial casi inexistente en Perú; valorización variable.",alt:["carton","pp"],calor:100,reg:"PPWR (UE) limita PFAS en contacto con alimentos desde 12 ago. 2026."},
+  pla:{n:"PLA / bioplástico",fam:"04 PLA / bioplásticos",quees:"Plástico de origen vegetal (maíz, caña).",usos:"Vasos fríos, cubiertos, film, tapas de bebida fría.",fort:"Aspecto de plástico con base renovable.",grieta:"Se ablanda a unos 55–60 °C: no es para bebida caliente. Requiere compostaje industrial que en Perú casi no existe y contamina el reciclaje de PET.",claim:"“Compostable” sin circuito es un riesgo de Indecopi. Biodegradable exige certificado (NTP 900.080).",fin:"Sin circuito dedicado; termina en relleno.",alt:["pet","fibra","carton"],calor:58,reg:"Art. 11 Ley 30884 para cualquier declaración de biodegradabilidad."},
+  vidrio:{n:"Vidrio",fam:"05 Vidrio",quees:"Envase inerte, reutilizable y reciclable indefinidamente.",usos:"Botellas retornables, frascos, tarros.",fort:"Barrera total, reuso, percepción premium.",grieta:"Peso (transporte y rotura), logística de retorno.",claim:"“Reutilizable” si existe sistema de retorno medido.",fin:"Circuito consolidado de reciclaje y reuso.",alt:["pet"],calor:200,reg:""},
+  aluminio:{n:"Aluminio",fam:"06 Aluminio",quees:"Latas y láminas metálicas.",usos:"Latas de bebida, bandejas, tapas.",fort:"Alta reciclabilidad y buen valor de chatarra.",grieta:"Huella de producción primaria; recubrimientos internos; precio.",claim:"“Reciclable” respaldado por alto valor de acopio; el % reciclado exige certificado.",fin:"Circuito fuerte de acopio informal y formal.",alt:["pet","vidrio"],calor:200,reg:""},
+  oxo:{n:"Oxo-degradable (anti-estrella)",fam:"Anti-estrella",quees:"Plástico convencional con aditivos que lo fragmentan.",usos:"Bolsas y film “biodegradables”.",fort:"Ninguna fortaleza ambiental comprobada.",grieta:"Se fragmenta en microplásticos; no es biodegradable ni compostable.",claim:"Ninguno. No usar ni recomendar.",fin:"Contamina cualquier circuito.",alt:["pet","carton","fibra"],calor:70,reg:"Bolsas oxo-degradables prohibidas por Ley 30884."}
+ },
+ pseudo:{
+  reduccion:{n:"Reducir o eliminar el empaque",fam:"Estrategia",quees:"Quitar capas, bajar gramaje o vender a granel.",grieta:"",calor:999,alt:[]},
+  monomat:{n:"Mono-material rediseñado",fam:"Estrategia",quees:"Pasar de multicapa a un solo polímero reciclable.",grieta:"",calor:999,alt:[]}
+ },
+ usos:[
+  {id:"frio",n:"Bebida fría",t:5,alim:true},{id:"caliente",n:"Bebida caliente (≈85 °C)",t:85,alim:true},
+  {id:"alimfrio",n:"Alimento frío o seco",t:25,alim:true},{id:"alimcal",n:"Alimento caliente / grasoso",t:90,alim:true},
+  {id:"nodali",n:"No alimentario (limpieza, cosmética)",t:25,alim:false},{id:"ecom",n:"Transporte o e-commerce",t:25,alim:false}
+ ],
+ ejemplos:[
+  "Botella de agua de 500 ml, plástico transparente",
+  "Vaso de 12 oz para café caliente, parece cartón con interior brillante y tapa negra",
+  "Bolsa metalizada de snacks con tres capas",
+  "Bandeja blanca de tecnopor para comida para llevar"
+ ]
+};
+const mat = id => KB.mats[id] || KB.pseudo[id];
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ===== Motor local (modo guiado) ===== */
+function diagLocal(id, usoId){
+  const m = KB.mats[id], u = KB.usos.find(x=>x.id===usoId);
+  const riesgos=[], op=[], brechas=[], si=[], no=[];
+  riesgos.push({tipo:"Material",desc:m.grieta,sev:id==="oxo"||id==="pvc"||id==="ps"||id==="lam"?"A":"M"});
+  if(u.t>m.calor) riesgos.unshift({tipo:"Desempeño (descarte)",desc:`${m.n} no tolera la temperatura de uso (≈${u.t} °C; límite aproximado ${m.calor} °C). Falla el filtro de desempeño real: no pasa la matriz sin rediseño.`,sev:"A"});
+  if(m.reg) riesgos.push({tipo:"Regulatorio",desc:m.reg,sev:"M"});
+  if(u.alim) riesgos.push({tipo:"Sanitario",desc:"Contacto con alimento: pedir declaración de aptitud alimentaria y, en fibra y cartón, declaración libre de PFAS.",sev:"M"});
+  m.alt.filter(a=>mat(a)).forEach(a=>{
+    const x=mat(a); const falla=x.calor<u.t;
+    if(falla) return;
+    const tipo=KB.pseudo[a]?"rediseñar":"sustituir";
+    op.push({accion:tipo,titulo:x.n,detalle:KB.pseudo[a]?x.quees:`Candidato a evaluar en la matriz. Fortaleza: ${x.fort} Cuidado: ${x.grieta}`,viabilidad:a==="vidrio"||a==="aluminio"?"M":"M"});
+  });
+  if(!KB.pseudo.reduccion) {}
+  op.push({accion:"reducir",titulo:"Reducir gramaje o eliminar componentes",detalle:"Revisar si tapa, manga, segunda capa o empaque secundario son necesarios. Suele ser la opción de mayor viabilidad y menor costo.",viabilidad:"A"});
+  const o=op.slice(0,5);
+  brechas.push("Peso real del envase (g) y volumen de compra anual","Origen y proveedor actual; ficha técnica","Condiciones reales de llenado, almacenamiento y uso","Fin de vida real: ¿existe acopio en la zona del cliente?");
+  si.push("Describir el material como lo que es (p. ej. “envase de PET”)","Hablar de reciclabilidad solo si hay circuito de acopio comprobable");
+  no.push("“100 % biodegradable” o “ecológico” sin certificado","“Compostable” sin certificado ni circuito de compostaje real","Cualquier claim sobre un material que falla el desempeño de uso");
+  const pocoClaro=u.t>m.calor;
+  return{
+   identificacion:{material:m.n,familia:m.fam,confianza:100,evidencias:["Elegido por el usuario en el modo guiado"],aclarar:[]},
+   condiciones:`${u.n}`+(u.alim?", contacto con alimento":""),
+   riesgos,oportunidades:o,brechas,claims_si:si,claims_no:no,
+   alerta:m.reg?m.reg:"",
+   siguiente:{nivel:pocoClaro?"Nivel 2 · Sprint de Materiales y Proveedores":"Nivel 1 · Diagnóstico Circular",razon:pocoClaro?"El material actual falla un filtro duro. Conviene ir directo a shortlist de alternativas.":"Falta línea base con datos del cliente antes de comparar alternativas."},
+   fuente:"local"
+  };
+}
+
+/* ===== Prompt para Claude (foto y texto) ===== */
+function buildPrompt(extra, hasImg){
+  const kb=Object.entries(KB.mats).map(([k,m])=>`${k}: ${m.n} | grieta: ${m.grieta} | claim: ${m.claim||""} | fin de vida Perú: ${m.fin} | límite térmico aprox: ${m.calor} °C | alternativas: ${m.alt.join(",")} | regulatorio: ${m.reg||"-"}`).join("\n");
+  return `Eres el analista preliminar de RUNAS VERDES (Perú) y aplicas la metodología RUTA Circular (Reconocer, Ubicar, Testear, Acreditar). Haces SOLO el primer paso, Reconocer: un diagnóstico PRELIMINAR del empaque. No certificas nada.
+
+${hasImg?"Mira la imagen del empaque. ":""}Información del usuario: ${extra||"(sin descripción adicional)"}
+
+BASE DE CONOCIMIENTO RUNAS VERDES (úsala; no inventes datos fuera de ella salvo conocimiento general marcado como tal):
+${kb}
+
+Seis filtros de la matriz: ${KB.filtros.join("; ")}. Regla de oro: ${KB.reglaOro}
+Marco normativo: Ley 30884 (art. 10: 15 % PET-PCR en botellas; art. 11: certificado de biodegradabilidad NTP 900.080; restricciones a EPS para alimentos y bebidas, bolsas oxo y plásticos de un solo uso); Indecopi Guía de Publicidad Ambiental (multas hasta 700 UIT); PPWR UE desde 12 ago 2026 (PFAS).
+
+REGLAS:
+- Si no puedes distinguir el material con certeza (por ejemplo PET vs PLA, o cartón con PE vs acuoso), dilo, baja la confianza y lista qué dato aclararía. Nunca afirmes un material con certeza solo por la apariencia.
+- Tolerancia térmica: si el uso es caliente y el material no lo tolera (PLA, PET estándar), márcalo como riesgo de severidad A.
+- Máximo 5 oportunidades, mezcla de reducir / sustituir / rediseñar; no recomiendes siempre el mismo material; no recomiendes oxo-degradable.
+- Claims: nunca sugieras “biodegradable”, “compostable” o “ecológico” sin certificado y circuito real.
+- Escribe en español, frases cortas y concretas, sin relleno.
+
+Responde SOLO con un JSON con esta forma exacta:
+{"identificacion":{"material":"nombre","familia":"familia de la Carta","confianza":0-100,"evidencias":["..."],"aclarar":["dato que falta para confirmar"]},
+"condiciones":"uso supuesto del envase",
+"riesgos":[{"tipo":"Material|Regulatorio|Sanitario|Operativo|Claim","desc":"...","sev":"A|M|B"}],
+"oportunidades":[{"accion":"reducir|sustituir|rediseñar","titulo":"...","detalle":"...","viabilidad":"A|M|B"}],
+"brechas":["dato primario que falta: material, peso, origen, fin de vida, etc."],
+"claims_si":["..."],"claims_no":["..."],
+"alerta":"alerta regulatoria o cadena vacía",
+"siguiente":{"nivel":"Nivel 1 · Diagnóstico Circular | Nivel 2 · Sprint de Materiales y Proveedores | Nivel 3 · Piloto | Más levantamiento | No continuar","razon":"..."}}`;
+}
+
+/* ===== Render ===== */
+const $=id=>document.getElementById(id);
+let ultimo=null;
+function li(items,cls){return `<ul class="plain ${cls||""}">${items.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`}
+function render(d){
+  ultimo=d;
+  const c=Math.max(0,Math.min(100,+d.identificacion?.confianza||0));
+  const sevName={A:"Alta",M:"Media",B:"Baja"};
+  let h="";
+  h+=`<div class="card"><h2><small>R · Reconocer · Material</small>Identificación</h2>
+    <div class="id-name">${esc(d.identificacion?.material)}</div>
+    <div class="note">${esc(d.identificacion?.familia||"")}</div>
+    <div class="conf"><div class="bar"><i style="width:${c}%"></i></div><span class="mono">${c}% confianza</span></div>
+    ${(d.identificacion?.evidencias||[]).length?`<p class="note" style="margin:10px 0 0"><b>Qué lo sugiere:</b> ${esc(d.identificacion.evidencias.join(" · "))}</p>`:""}
+    ${(d.identificacion?.aclarar||[]).length?`<p class="note" style="margin:6px 0 0"><b>Para confirmar:</b> ${esc(d.identificacion.aclarar.join(" · "))}</p>`:""}
+    <p class="note" style="margin:10px 0 0"><b>Uso supuesto:</b> ${esc(d.condiciones||"")}</p></div>`;
+  if(d.alerta) h+=`<div class="alert"><b>Alerta regulatoria.</b> ${esc(d.alerta)}</div>`;
+  h+=`<div class="card"><h2><small>Riesgos</small>Qué puede salir mal</h2><ul class="plain">${(d.riesgos||[]).map(r=>`<li class="item"><span class="pill ${esc(r.sev)}">${esc(sevName[r.sev]||r.sev)}</span><div><b>${esc(r.tipo)}.</b> ${esc(r.desc)}</div></li>`).join("")}</ul></div>`;
+  h+=`<div class="card"><h2><small>Primeras opciones de trabajo</small>Oportunidades</h2><ul class="plain">${(d.oportunidades||[]).map(o=>`<li class="item"><span class="pill ${esc(o.viabilidad)}" title="Viabilidad">V · ${esc(o.viabilidad)}</span><div><span class="act">${esc(o.accion)}</span><br><b>${esc(o.titulo)}</b><br><span class="note">${esc(o.detalle)}</span></div></li>`).join("")}</ul>
+    <p class="note" style="margin:12px 0 0">Viabilidad A / M / B es una primera lectura. La decisión sale de la matriz de 6 filtros con datos reales (regla: ${esc(KB.reglaOro)})</p></div>`;
+  h+=`<div class="two"><div class="card"><h2><small>Claims</small>Se puede decir</h2>${li(d.claims_si||[],"yes")}</div><div class="card"><h2><small>Claims</small>No decir</h2>${li(d.claims_no||[],"no")}</div></div>`;
+  h+=`<div class="card"><h2><small>Datos primarios</small>Brechas de información</h2>${li(d.brechas||[])}</div>`;
+  h+=`<div class="next"><h2><small>Siguiente paso</small>${esc(d.siguiente?.nivel||"")}</h2><div>${esc(d.siguiente?.razon||"")}</div></div>`;
+  h+=`<div class="row"><button class="btn ghost" id="dl">Guardar ficha preliminar</button><button class="btn ghost" id="nuevo">Nuevo escaneo</button></div><div class="note" id="dlnote"></div>`;
+  h+=`<div class="prelim"><b>Preliminar</b><br>${d.fuente==="local"?"Generado con la base de RUNAS VERDES, sin análisis de imagen.":"Generado con Claude sobre la base de RUNAS VERDES."} No reemplaza ensayos, fichas técnicas ni certificación.</div>`;
+  $("out").innerHTML=h;
+  $("dl").onclick=descargar;
+  $("nuevo").onclick=()=>{$("out").innerHTML="";window.scrollTo({top:0,behavior:"smooth"})};
+  $("out").scrollIntoView({behavior:"smooth",block:"start"});
+}
+async function descargar(){
+  const d=ultimo; if(!d)return;
+  const L=[];
+  L.push("RUNAS VERDES · FICHA PRELIMINAR (Reconocer)","DIAGNÓSTICO PRELIMINAR · NO CERTIFICA","");
+  L.push(`Material: ${d.identificacion.material} (${d.identificacion.confianza}% confianza)`,`Familia: ${d.identificacion.familia||""}`,`Uso supuesto: ${d.condiciones||""}`,"");
+  L.push("RIESGOS");(d.riesgos||[]).forEach(r=>L.push(`- [${r.sev}] ${r.tipo}: ${r.desc}`));
+  L.push("","OPORTUNIDADES");(d.oportunidades||[]).forEach(o=>L.push(`- (${o.accion}, viabilidad ${o.viabilidad}) ${o.titulo}: ${o.detalle}`));
+  L.push("","BRECHAS DE INFORMACIÓN");(d.brechas||[]).forEach(b=>L.push("- "+b));
+  L.push("","CLAIMS QUE SÍ");(d.claims_si||[]).forEach(b=>L.push("- "+b));
+  L.push("","CLAIMS QUE NO");(d.claims_no||[]).forEach(b=>L.push("- "+b));
+  L.push("","SIGUIENTE PASO: "+(d.siguiente?.nivel||""),d.siguiente?.razon||"","");
+  L.push("Documento preliminar. Requiere validación con datos del cliente y del proveedor.");
+  const txt=L.join("\n");
+  try{
+    const dl=await claude.use("downloads");
+    if(!dl) throw 0;
+    await dl.save({filename:"ficha-preliminar-runas-verdes.txt",data:new Blob([txt],{type:"text/plain"})});
+    $("dlnote").textContent="Ficha guardada.";
+  }catch(e){
+    try{await navigator.clipboard.writeText(txt);$("dlnote").textContent="No se pudo guardar el archivo. La ficha quedó copiada al portapapeles."}
+    catch(_){$("dlnote").textContent="No se pudo guardar ni copiar la ficha."}
+  }
+}
+
+/* ===== Claude (foto / texto) ===== */
+let sample=null, imgFile=null, ctl=null, imgOK=false;
+const ERR={not_granted:"No se concedió permiso para usar Claude. Usa el modo Guiado.",rate_limited:"Demasiadas consultas seguidas o límite de uso alcanzado. Espera un momento y vuelve a intentar.",image_rejected:"La imagen no se pudo leer. Prueba con otra foto (JPG, PNG o WebP).",refused:"Claude no pudo analizar esa entrada. Cambia la foto o la descripción.",invalid_json:"La respuesta no tuvo el formato esperado. Intenta de nuevo.",session_expired:"Tu sesión venció. Vuelve a iniciar sesión en Claude.",upstream_error:"Falló la conexión. Intenta de nuevo.",images_unavailable:"Esta vista no puede enviar imágenes. Usa Descripción o Guiado."};
+async function escanear(extra,withImg,btn){
+  if(!sample){$("out").innerHTML=`<div class="err">El análisis con Claude no está disponible aquí. Usa el modo Guiado.</div>`;return}
+  ctl=new AbortController();
+  btn.disabled=true;$("stop").hidden=false;
+  $("out").innerHTML=`<div class="spin">Analizando el empaque… puede tardar hasta un minuto.</div>`;
+  try{
+    const opts={signal:ctl.signal};
+    if(withImg) opts.images=[imgFile];
+    const d=await sample.json(buildPrompt(extra,withImg),opts);
+    if(!d||!d.identificacion||!Array.isArray(d.riesgos)||!Array.isArray(d.oportunidades)) throw {code:"invalid_json"};
+    d.fuente="claude"; render(d);
+  }catch(e){
+    if(e&&e.code==="cancelled"){$("out").innerHTML=""}
+    else $("out").innerHTML=`<div class="err">${esc(ERR[e&&e.code]||"No se pudo completar el análisis.")}</div>`;
+  }finally{btn.disabled=false;$("stop").hidden=true;if(withImg)btn.disabled=!imgFile}
+}
+
+/* ===== UI ===== */
+function tab(t){
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t));
+  ["foto","desc","guia"].forEach(x=>$("p-"+x).hidden=x!==t);
+}
+$("tabs").onclick=e=>{const b=e.target.closest("button");if(b)tab(b.dataset.t)};
+function setImg(f){
+  if(!f)return; imgFile=f;
+  const url=URL.createObjectURL(f); $("prev").src=url; $("prev").hidden=false;
+  $("dropmsg").textContent="Imagen lista. Puedes cambiarla o escanear.";
+  $("go-foto").disabled=false;
+}
+$("cam").onchange=e=>setImg(e.target.files[0]);
+$("gal").onchange=e=>setImg(e.target.files[0]);
+$("go-foto").onclick=()=>escanear($("nota-foto").value.trim(),true,$("go-foto"));
+$("go-desc").onclick=()=>{
+  const t=$("txt").value.trim();
+  if(!t){$("desc-note").textContent="Escribe una descripción del empaque.";return}
+  $("desc-note").textContent="";
+  escanear(t,false,$("go-desc"));
+};
+$("stop").onclick=()=>ctl&&ctl.abort();
+$("ejemplos").innerHTML=KB.ejemplos.map((t,i)=>`<button class="chip" data-i="${i}">${esc(t)}</button>`).join("");
+$("ejemplos").onclick=e=>{const b=e.target.closest(".chip");if(b)$("txt").value=KB.ejemplos[+b.dataset.i]};
+$("g-mat").innerHTML=Object.entries(KB.mats).filter(([k])=>k!=="oxo"||true).map(([k,m])=>`<option value="${k}">${esc(m.n)}</option>`).join("");
+$("g-uso").innerHTML=KB.usos.map(u=>`<option value="${u.id}">${esc(u.n)}</option>`).join("");
+$("go-guia").onclick=()=>render(diagLocal($("g-mat").value,$("g-uso").value));
+
+(async()=>{
+  try{ sample=await claude.use("sample"); }catch(e){ sample=null; }
+  if(sample){
+    try{ const l=await sample.limits(); imgOK=!!l.images; }catch(e){ imgOK=false; }
+  }
+  if(!sample){
+    $("foto-note").textContent="El análisis con Claude no está disponible en esta vista. Usa el modo Guiado.";
+    $("go-foto").disabled=true; $("go-desc").disabled=true; $("desc-note").textContent="Análisis con Claude no disponible. Usa el modo Guiado.";
+    tab("guia");
+  } else if(!imgOK){
+    $("foto-note").textContent="Esta vista no admite imágenes. Usa Descripción o Guiado.";
+    $("cam").disabled=true;$("gal").disabled=true;tab("desc");
+  } else {
+    $("foto-note").textContent="La foto se envía a Claude y consume tu uso de Claude. Se te pedirá permiso la primera vez.";
+  }
+})();
+</script>
+
+</body></html>

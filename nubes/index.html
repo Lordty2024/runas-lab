@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La batalla de las nubes</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #050d1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: sans-serif;
+    }
+    #stage-container {
+      position: relative;
+      width: 100vw;
+      height: 56.25vw; /* 16:9 ratio */
+      max-height: 100vh;
+      max-width: 177.78vh; /* 16:9 ratio */
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      background: #0d2b52;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage-container">
+    <canvas id="cloud-stage" width="1920" height="1080"></canvas>
+  </div>
+
+  <script>
+    // Configuración general y constantes
+    const TOTAL_DURATION = 25.0; // 25 segundos exactos
+    const WIDTH = 1920;
+    const HEIGHT = 1080;
+    const canvas = document.getElementById('cloud-stage');
+    const ctx = canvas.getContext('2d');
+
+    // Estado del tiempo de animación
+    let startTime = null;
+    let animTime = 0;
+
+    // --- SISTEMA DE AUDIO (Comedia Teatral Vodevil) ---
+    let audioCtx = null;
+    let masterGain = null;
+    let musicStarted = false;
+
+    function initAudio() {
+      if (audioCtx) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+      } catch (e) {
+        console.warn('AudioContext no soportado');
+      }
+    }
+
+    // Instrumento: Xilófono / Marimba cómico
+    function playMarimba(freq, time, duration = 0.22, vol = 0.3) {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, time);
+
+      // Armónico para el toque de madera
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(freq * 3, time);
+
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+      gain2.gain.setValueAtTime(vol * 0.4, time);
+      gain2.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.5);
+
+      osc.connect(gain);
+      osc2.connect(gain2);
+      gain.connect(masterGain);
+      gain2.connect(masterGain);
+
+      osc.start(time);
+      osc.stop(time + duration);
+      osc2.start(time);
+      osc2.stop(time + duration * 0.5);
+    }
+
+    // Instrumento: Bajo Pizzicato / Fagot juguetón
+    function playPizz(freq, time, duration = 0.28, vol = 0.4) {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      const osc = audioCtx.createOscillator();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, time);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(900, time);
+      filter.frequency.exponentialRampToValueAtTime(120, time + duration);
+
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+
+      osc.start(time);
+      osc.stop(time + duration);
+    }
+
+    // Instrumento: Tuba / Metal de farsa cómica
+    function playBrass(freq, time, duration = 0.45, vol = 0.35) {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      const osc = audioCtx.createOscillator();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, time);
+      // Ligero vibrato cómico
+      osc.frequency.setValueAtTime(freq, time + 0.1);
+      osc.frequency.linearRampToValueAtTime(freq * 1.02, time + duration * 0.5);
+      osc.frequency.linearRampToValueAtTime(freq, time + duration);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(400, time);
+      filter.frequency.linearRampToValueAtTime(1400, time + 0.08);
+      filter.frequency.exponentialRampToValueAtTime(300, time + duration);
+
+      gain.gain.setValueAtTime(0.001, time);
+      gain.gain.linearRampToValueAtTime(vol, time + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+
+      osc.start(time);
+      osc.stop(time + duration);
+    }
+
+    // Efecto cómico: Gota de agua (Plink)
+    function playWaterDrop(time) {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, time);
+      osc.frequency.exponentialRampToValueAtTime(350, time + 0.15);
+
+      gain.gain.setValueAtTime(0.4, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + 0.15);
+    }
+
+    // Efecto cómico: Copos mágicos / Campana
+    function playIceChime(freq, time) {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, time);
+      gain.gain.setValueAtTime(0.25, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + 0.35);
+    }
+
+    // Efecto cómico: Resoplido de vapor de elefante
+    function playSteamPuff(time) {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      const bufferSize = audioCtx.sampleRate * 0.45;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(900, time);
+      filter.frequency.linearRampToValueAtTime(400, time + 0.45);
+      filter.Q.value = 3;
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.35, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.45);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+
+      noise.start(time);
+      noise.stop(time + 0.45);
+    }
+
+    // Efecto cómico: Choque suave elástico y explosión de confeti
+    function playSoftCollisionExplosion(time) {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      // Boing elástico
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(140, time);
+      osc.frequency.exponentialRampToValueAtTime(320, time + 0.12);
+      osc.frequency.exponentialRampToValueAtTime(90, time + 0.35);
+
+      gain.gain.setValueAtTime(0.5, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + 0.4);
+
+      // Glissando de arpa celestial / arcoíris
+      const harpNotes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00];
+      harpNotes.forEach((f, idx) => {
+        playIceChime(f, time + 0.15 + idx * 0.06);
+      });
+    }
+
+    // Efecto de Nana de caja de música al final
+    function playMusicBox(freq, time) {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, time);
+
+      gain.gain.setValueAtTime(0.2, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.8);
+
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + 0.8);
+    }
+
+    // Puntuación y planificación de la música cómica sincronizada a los 25 segundos
+    function scheduleTheaterMusic(cycleStartAudioTime) {
+      if (!audioCtx) return;
+      const t0 = cycleStartAudioTime;
+
+      // Frecuencias musicales
+      const notes = {
+        C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.00, A3: 220.00, B3: 246.94,
+        C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.00, A4: 440.00, B4: 493.88,
+        C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880.00
+      };
+
+      // FASE 1: (0.0s - 3.5s) De puntillas relajado (Tiptoe intro)
+      const tiptoeTimes = [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
+      const tiptoeBass = [notes.C3, notes.G3, notes.C3, notes.E3, notes.F3, notes.G3, notes.C3];
+      const tiptoeXylo = [notes.G4, notes.E4, notes.C5, notes.G4, notes.A4, notes.B4, notes.C5];
+
+      tiptoeTimes.forEach((dt, i) => {
+        playPizz(tiptoeBass[i], t0 + dt, 0.22, 0.35);
+        playMarimba(tiptoeXylo[i], t0 + dt + 0.25, 0.18, 0.25);
+      });
+
+      // FASE 2: (3.5s - 6.5s) Travesura de lluvia y gotas cómicas
+      const rainPlinks = [3.8, 4.3, 4.8, 5.3, 5.8];
+      rainPlinks.forEach((dt) => {
+        playWaterDrop(t0 + dt);
+        playMarimba(notes.G4 + Math.random() * 100, t0 + dt + 0.08, 0.15, 0.2);
+      });
+      playPizz(notes.G3, t0 + 4.0, 0.3, 0.4);
+      playPizz(notes.D3, t0 + 5.0, 0.3, 0.4);
+      playPizz(notes.G3, t0 + 6.0, 0.3, 0.4);
+
+      // FASE 3: (6.5s - 9.5s) Respuesta helada y estornudos cómicos
+      const snowTimes = [6.8, 7.3, 7.8, 8.3, 8.8];
+      const snowChimes = [notes.C5, notes.E5, notes.G5, notes.C5 * 2, notes.E5 * 2];
+      snowTimes.forEach((dt, i) => {
+        playIceChime(snowChimes[i], t0 + dt);
+        playMarimba(snowChimes[i] / 2, t0 + dt + 0.1, 0.12, 0.25);
+      });
+      // Trino cómico de resfrío
+      for (let k = 0; k < 6; k++) {
+        playMarimba(notes.D5 + (k % 2 === 0 ? 30 : 0), t0 + 8.9 + k * 0.08, 0.08, 0.2);
+      }
+
+      // FASE 4: (9.5s - 13.5s) Elefante grandilocuente de circo
+      const elephantBrass = [
+        { f: notes.C3, dt: 9.6, d: 0.3 },
+        { f: notes.E3, dt: 10.1, d: 0.3 },
+        { f: notes.G3, dt: 10.6, d: 0.4 },
+        { f: notes.C4, dt: 11.2, d: 0.6 },
+        { f: notes.B3, dt: 12.0, d: 0.3 },
+        { f: notes.C4, dt: 12.5, d: 0.7 }
+      ];
+      elephantBrass.forEach(b => playBrass(b.f, t0 + b.dt, b.d, 0.4));
+      // Resoplido de vapor
+      playSteamPuff(t0 + 11.8);
+      playSteamPuff(t0 + 12.6);
+
+      // FASE 5: (13.5s - 17.5s) Pulpo marino cómico (Vals marino disparatado)
+      const waltzTimes = [13.6, 14.2, 14.8, 15.4, 16.0, 16.6];
+      waltzTimes.forEach((dt, idx) => {
+        playPizz(idx % 2 === 0 ? notes.F3 : notes.C3, t0 + dt, 0.25, 0.4);
+        playMarimba(notes.A4, t0 + dt + 0.2, 0.15, 0.22);
+        playMarimba(notes.C5, t0 + dt + 0.4, 0.15, 0.22);
+      });
+
+      // FASE 6: (17.5s - 20.5s) Marcha heroica de farsa: Dragón vs Dinosaurio
+      const faceoff = [
+        { f: notes.D3, dt: 17.6 }, { f: notes.F3, dt: 17.9 }, { f: notes.A3, dt: 18.2 },
+        { f: notes.D4, dt: 18.5 }, { f: notes.C4, dt: 19.0 }, { f: notes.B3, dt: 19.4 },
+        { f: notes.A3, dt: 19.8 }, { f: notes.G3, dt: 20.2 }
+      ];
+      faceoff.forEach(note => {
+        playBrass(note.f, t0 + note.dt, 0.25, 0.38);
+        playMarimba(note.f * 2, t0 + note.dt, 0.2, 0.25);
+      });
+
+      // FASE 7: (20.5s - 22.5s) ¡Impacto suave, Confeti y Gran Arcoíris!
+      playSoftCollisionExplosion(t0 + 20.8);
+      // Fanfarria triunfal alegre
+      playBrass(notes.C4, t0 + 21.3, 0.8, 0.4);
+      playBrass(notes.E4, t0 + 21.3, 0.8, 0.3);
+      playBrass(notes.G4, t0 + 21.3, 0.8, 0.3);
+
+      // FASE 8: (22.5s - 25.0s) Nana dulce y tranquila (Nubes dormidas)
+      const lullaby = [
+        { f: notes.G4, dt: 22.6 },
+        { f: notes.E4, dt: 23.1 },
+        { f: notes.G4, dt: 23.6 },
+        { f: notes.C4, dt: 24.1 },
+        { f: notes.E4, dt: 24.6 }
+      ];
+      lullaby.forEach(n => {
+        playMusicBox(n.f, t0 + n.dt);
+      });
+    }
+
+    let lastCycleIndex = -1;
+    function checkAudioLoop(t) {
+      if (!audioCtx) return;
+      const currentCycle = Math.floor(t / TOTAL_DURATION);
+      if (currentCycle !== lastCycleIndex) {
+        lastCycleIndex = currentCycle;
+        // Programar ciclo
+        const cycleBaseTime = audioCtx.currentTime + (currentCycle * TOTAL_DURATION - t);
+        scheduleTheaterMusic(Math.max(audioCtx.currentTime, cycleBaseTime));
+      }
+    }
+
+    // Activador automático y silencioso para políticas de autoplay
+    function ensureAudioRunning() {
+      initAudio();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    window.addEventListener('click', ensureAudioRunning);
+    window.addEventListener('touchstart', ensureAudioRunning);
+    window.addEventListener('keydown', ensureAudioRunning);
+    window.addEventListener('DOMContentLoaded', ensureAudioRunning);
+
+    // --- SISTEMA DE PARTÍCULAS ---
+    const rainParticles = [];
+    const snowParticles = [];
+    const steamParticles = [];
+    const confettiParticles = [];
+    const sleepParticles = [];
+
+    function updateParticles(t, dt) {
+      const cycleTime = t % TOTAL_DURATION;
+
+      // 1. Lluvia (3.5s - 6.5s) lanzada desde Nube 1 hacia Nube 2
+      if (cycleTime >= 3.6 && cycleTime <= 5.8) {
+        if (Math.random() < 0.65) {
+          rainParticles.push({
+            x: 680 + Math.random() * 40,
+            y: 380 + Math.random() * 30,
+            vx: 12 + Math.random() * 6,
+            vy: -4 + Math.random() * 4,
+            gravity: 0.45,
+            length: 18 + Math.random() * 12,
+            targetX: 1240 + (Math.random() * 100 - 50),
+            targetY: 420 + (Math.random() * 100 - 50),
+            splashed: false,
+            life: 1.0
+          });
+        }
+      }
+
+      for (let i = rainParticles.length - 1; i >= 0; i--) {
+        const p = rainParticles[i];
+        p.x += p.vx;
+        p.vy += p.gravity;
+        p.y += p.vy;
+        p.life -= dt * 1.5;
+
+        // Comprobar salpicadura contra Nube 2
+        if (p.x >= 1200 && !p.splashed) {
+          p.splashed = true;
+          p.vx = (Math.random() - 0.5) * 6;
+          p.vy = -Math.random() * 6;
+        }
+
+        if (p.life <= 0 || p.y > HEIGHT) {
+          rainParticles.splice(i, 1);
+        }
+      }
+
+      // 2. Nieve (6.5s - 9.5s) soplada desde Nube 2 hacia Nube 1
+      if (cycleTime >= 6.7 && cycleTime <= 9.0) {
+        if (Math.random() < 0.7) {
+          snowParticles.push({
+            x: 1220 - Math.random() * 30,
+            y: 390 + (Math.random() - 0.5) * 40,
+            vx: -(11 + Math.random() * 6),
+            vy: (Math.random() - 0.5) * 3,
+            rot: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 8,
+            size: 6 + Math.random() * 7,
+            life: 1.2
+          });
+        }
+      }
+
+      for (let i = snowParticles.length - 1; i >= 0; i--) {
+        const s = snowParticles[i];
+        s.x += s.vx;
+        s.y += s.vy + Math.sin(t * 8 + i) * 0.8;
+        s.rot += s.rotSpeed * dt;
+        s.life -= dt * 0.9;
+        if (s.life <= 0 || s.x < 300) {
+          snowParticles.splice(i, 1);
+        }
+      }
+
+      // 3. Vapor de Elefante (10.5s - 13.0s)
+      if (cycleTime >= 10.6 && cycleTime <= 12.8) {
+        if (Math.random() < 0.45) {
+          steamParticles.push({
+            x: 820,
+            y: 330,
+            vx: 8 + Math.random() * 4,
+            vy: -2 + Math.random() * 2,
+            radius: 14,
+            maxRadius: 55 + Math.random() * 25,
+            alpha: 0.85,
+            life: 1.0
+          });
+        }
+      }
+
+      for (let i = steamParticles.length - 1; i >= 0; i--) {
+        const st = steamParticles[i];
+        st.x += st.vx;
+        st.y += st.vy;
+        st.radius += (st.maxRadius - st.radius) * 0.04;
+        st.alpha -= dt * 0.75;
+        if (st.alpha <= 0) {
+          steamParticles.splice(i, 1);
+        }
+      }
+
+      // 4. Confeti y partículas del impacto (20.8s - 24.5s)
+      if (cycleTime >= 20.8 && cycleTime <= 21.05 && confettiParticles.length < 250) {
+        const colors = [
+          '#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#00c7be',
+          '#30b0c7', '#32ade6', '#007aff', '#5856d6', '#af52de', '#ff2d55'
+        ];
+        for (let k = 0; k < 220; k++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 5 + Math.random() * 26;
+          confettiParticles.push({
+            x: 960 + (Math.random() - 0.5) * 60,
+            y: 420 + (Math.random() - 0.5) * 60,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 6,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            w: 8 + Math.random() * 10,
+            h: 14 + Math.random() * 16,
+            rotX: Math.random() * Math.PI,
+            rotY: Math.random() * Math.PI,
+            rotZ: Math.random() * Math.PI,
+            vRotX: (Math.random() - 0.5) * 10,
+            vRotY: (Math.random() - 0.5) * 10,
+            vRotZ: (Math.random() - 0.5) * 10,
+            gravity: 0.28,
+            drag: 0.965,
+            life: 1.0,
+            decay: 0.18 + Math.random() * 0.12
+          });
+        }
+      }
+
+      for (let i = confettiParticles.length - 1; i >= 0; i--) {
+        const c = confettiParticles[i];
+        c.vx *= c.drag;
+        c.vy = c.vy * c.drag + c.gravity;
+        c.x += c.vx;
+        c.y += c.vy;
+        c.rotX += c.vRotX * dt;
+        c.rotY += c.vRotY * dt;
+        c.rotZ += c.vRotZ * dt;
+        c.life -= dt * c.decay;
+        if (c.life <= 0 || c.y > HEIGHT) {
+          confettiParticles.splice(i, 1);
+        }
+      }
+
+      // Limpiar confeti antes del nuevo ciclo
+      if (cycleTime < 20.0 && confettiParticles.length > 0) {
+        confettiParticles.length = 0;
+      }
+
+      // 5. Zetas de sueño (23.0s - 25.0s)
+      if (cycleTime >= 23.2 && cycleTime <= 24.8) {
+        if (Math.random() < 0.15) {
+          sleepParticles.push({
+            x: 960 + (Math.random() - 0.5) * 120,
+            y: 430,
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: -1.8 - Math.random() * 1.2,
+            scale: 0.6,
+            alpha: 1.0,
+            wobble: Math.random() * 10
+          });
+        }
+      }
+
+      for (let i = sleepParticles.length - 1; i >= 0; i--) {
+        const z = sleepParticles[i];
+        z.x += z.vx + Math.sin(t * 3 + z.wobble) * 0.6;
+        z.y += z.vy;
+        z.scale += dt * 0.3;
+        z.alpha -= dt * 0.5;
+        if (z.alpha <= 0) {
+          sleepParticles.splice(i, 1);
+        }
+      }
+      if (cycleTime < 22.0 && sleepParticles.length > 0) {
+        sleepParticles.length = 0;
+      }
+    }
+
+    // --- RENDERIZADO DEL ENTORNO DE FONDO ---
+    function drawSkyAndMountains(t) {
+      // 1. Cielo azul profundo de estética cartoon luminosa
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+      skyGrad.addColorStop(0, '#0a254d');   // Azul índigo profundo arriba
+      skyGrad.addColorStop(0.45, '#1e5a9c'); // Azul vibrante medio
+      skyGrad.addColorStop(0.75, '#4a94db'); // Azul luminoso
+      skyGrad.addColorStop(1.0, '#a2c9f5');  // Horizonte pastel brillante
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, 0 + WIDTH, HEIGHT);
+
+      // Resplandor cálido solar en el horizonte
+      const sunGlow = ctx.createRadialGradient(WIDTH * 0.5, HEIGHT * 0.75, 40, WIDTH * 0.5, HEIGHT * 0.75, 700);
+      sunGlow.addColorStop(0, 'rgba(255, 245, 210, 0.45)');
+      sunGlow.addColorStop(0.5, 'rgba(255, 220, 160, 0.15)');
+      sunGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = sunGlow;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      // Rayos de sol cartoon sutiles
+      ctx.save();
+      ctx.translate(WIDTH * 0.5, HEIGHT * 0.75);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+      for (let i = 0; i < 12; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        const a1 = (i / 12) * Math.PI * 2 + t * 0.02;
+        const a2 = a1 + 0.12;
+        ctx.arc(0, 0, 1500, a1, a2);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Nubes lejanas decorativas de fondo (paralaje lento)
+      drawDistantCloud(250 + (t * 8) % (WIDTH + 400) - 200, 220, 70, 'rgba(255, 255, 255, 0.35)');
+      drawDistantCloud(980 + (t * 6) % (WIDTH + 400) - 200, 160, 90, 'rgba(255, 255, 255, 0.4)');
+      drawDistantCloud(1650 + (t * 10) % (WIDTH + 400) - 200, 260, 60, 'rgba(255, 255, 255, 0.3)');
+
+      // Montañas lejanas con picos nevados estilizados (Capa 1)
+      ctx.fillStyle = '#3c6999';
+      ctx.beginPath();
+      ctx.moveTo(0, HEIGHT);
+      ctx.lineTo(0, 660);
+      ctx.lineTo(180, 560);
+      ctx.lineTo(440, 690);
+      ctx.lineTo(760, 520);
+      ctx.lineTo(1050, 680);
+      ctx.lineTo(1380, 510);
+      ctx.lineTo(1680, 640);
+      ctx.lineTo(WIDTH, 540);
+      ctx.lineTo(WIDTH, HEIGHT);
+      ctx.closePath();
+      ctx.fill();
+
+      // Picos nevados Capa 1
+      drawSnowCap(180, 560, 80, '#d8eaff');
+      drawSnowCap(760, 520, 100, '#d8eaff');
+      drawSnowCap(1380, 510, 95, '#d8eaff');
+
+      // Montañas medias azul-turquesa cartoon (Capa 2)
+      ctx.fillStyle = '#26517a';
+      ctx.beginPath();
+      ctx.moveTo(0, HEIGHT);
+      ctx.lineTo(0, 740);
+      ctx.quadraticCurveTo(280, 630, 560, 750);
+      ctx.quadraticCurveTo(900, 610, 1240, 760);
+      ctx.quadraticCurveTo(1580, 630, WIDTH, 730);
+      ctx.lineTo(WIDTH, HEIGHT);
+      ctx.closePath();
+      ctx.fill();
+
+      // Colinas verdes redondeadas en primer plano (Capa 3)
+      const hillGrad = ctx.createLinearGradient(0, 760, 0, HEIGHT);
+      hillGrad.addColorStop(0, '#48b872');
+      hillGrad.addColorStop(1, '#257442');
+      ctx.fillStyle = hillGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, HEIGHT);
+      ctx.lineTo(0, 840);
+      ctx.bezierCurveTo(340, 760, 680, 890, 1050, 810);
+      ctx.bezierCurveTo(1400, 740, 1700, 860, WIDTH, 800);
+      ctx.lineTo(WIDTH, HEIGHT);
+      ctx.closePath();
+      ctx.fill();
+
+      // Colina frontal más baja y viva
+      ctx.fillStyle = '#389e5c';
+      ctx.beginPath();
+      ctx.moveTo(0, HEIGHT);
+      ctx.lineTo(0, 920);
+      ctx.quadraticCurveTo(500, 830, 980, 940);
+      ctx.quadraticCurveTo(1450, 850, WIDTH, 910);
+      ctx.lineTo(WIDTH, HEIGHT);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawSnowCap(peakX, peakY, size, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(peakX, peakY);
+      ctx.lineTo(peakX - size * 0.5, peakY + size);
+      ctx.quadraticCurveTo(peakX - size * 0.2, peakY + size * 0.8, peakX, peakY + size * 0.95);
+      ctx.quadraticCurveTo(peakX + size * 0.2, peakY + size * 0.7, peakX + size * 0.5, peakY + size);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawDistantCloud(x, y, r, fillStyle) {
+      ctx.save();
+      ctx.fillStyle = fillStyle;
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.6, 0, Math.PI * 2);
+      ctx.arc(x + r * 0.5, y - r * 0.3, r * 0.7, 0, Math.PI * 2);
+      ctx.arc(x + r * 1.1, y, r * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // --- DIBUJADO VOLUMÉTRICO DE NUBES Y PERSONAJES ---
+    // Función auxiliar para dibujar un puff esférico volumétrico con iluminación cartoon 3D
+    function drawVolumetricPuff(cx, cy, r, baseTone = '#e2ecf7', highlightTone = '#ffffff', rimColor = 'rgba(255,255,255,0.8)') {
+      ctx.save();
+
+      // Sombra proyectada suave inferior
+      const shadowGrad = ctx.createRadialGradient(cx, cy + r * 0.25, r * 0.4, cx, cy, r * 1.15);
+      shadowGrad.addColorStop(0, 'rgba(120, 160, 205, 0.4)');
+      shadowGrad.addColorStop(0.85, 'rgba(80, 120, 170, 0.15)');
+      shadowGrad.addColorStop(1, 'rgba(80, 120, 170, 0)');
+      ctx.fillStyle = shadowGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy + r * 0.2, r * 1.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cuerpo volumétrico del puff
+      const bodyGrad = ctx.createRadialGradient(cx - r * 0.25, cy - r * 0.25, r * 0.1, cx, cy, r);
+      bodyGrad.addColorStop(0, highlightTone);
+      bodyGrad.addColorStop(0.65, baseTone);
+      bodyGrad.addColorStop(1, '#b8d2ec');
+      ctx.fillStyle = bodyGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Brillo especular superior gloss
+      const glossGrad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.35, 0, cx - r * 0.3, cy - r * 0.35, r * 0.65);
+      glossGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      glossGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.4)');
+      glossGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = glossGrad;
+      ctx.beginPath();
+      ctx.arc(cx - r * 0.25, cy - r * 0.3, r * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Borde de luz fina cartoon
+      ctx.strokeStyle = rimColor;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // Ojos y expresiones cómicas de las nubes
+    function drawCartoonFace(cx, cy, options) {
+      const {
+        eyeLookX = 0,
+        eyeLookY = 0,
+        blink = false,
+        mouthType = 'smile', // 'smile', 'open-o', 'pout', 'sleeping', 'determined', 'shock'
+        mouthScale = 1.0,
+        blush = true,
+        eyeDist = 48,
+        eyeSize = 16
+      } = options;
+
+      ctx.save();
+
+      // Mejillas sonrosadas
+      if (blush) {
+        ctx.fillStyle = 'rgba(255, 120, 160, 0.35)';
+        ctx.beginPath();
+        ctx.arc(cx - eyeDist - 12, cy + 16, 16, 0, Math.PI * 2);
+        ctx.arc(cx + eyeDist + 12, cy + 16, 16, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Ojos
+      const eyeL_x = cx - eyeDist;
+      const eyeR_x = cx + eyeDist;
+      const eyeY = cy;
+
+      if (blink) {
+        // Ojo cerrado en arco feliz
+        ctx.strokeStyle = '#23374d';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(eyeL_x, eyeY + 4, eyeSize, Math.PI * 0.15, Math.PI * 0.85);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(eyeR_x, eyeY + 4, eyeSize, Math.PI * 0.15, Math.PI * 0.85);
+        ctx.stroke();
+      } else {
+        // Esclerótica blanca
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#2b4461';
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.ellipse(eyeL_x, eyeY, eyeSize, eyeSize * 1.25, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(eyeR_x, eyeY, eyeSize, eyeSize * 1.25, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Pupilas
+        const pupSize = eyeSize * 0.6;
+        const pupL_x = eyeL_x + eyeLookX * (eyeSize - pupSize);
+        const pupL_y = eyeY + eyeLookY * (eyeSize * 1.25 - pupSize);
+        const pupR_x = eyeR_x + eyeLookX * (eyeSize - pupSize);
+        const pupR_y = eyeY + eyeLookY * (eyeSize * 1.25 - pupSize);
+
+        ctx.fillStyle = '#1c2938';
+        ctx.beginPath();
+        ctx.arc(pupL_x, pupL_y, pupSize, 0, Math.PI * 2);
+        ctx.arc(pupR_x, pupR_y, pupSize, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Brillo blanco de mirada cartoon
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(pupL_x - pupSize * 0.35, pupL_y - pupSize * 0.35, pupSize * 0.4, 0, Math.PI * 2);
+        ctx.arc(pupR_x - pupSize * 0.35, pupR_y - pupSize * 0.35, pupSize * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Bocas expresivas
+      ctx.strokeStyle = '#1c2938';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.fillStyle = '#f2687d';
+
+      if (mouthType === 'smile') {
+        ctx.beginPath();
+        ctx.arc(cx, cy + 18, 22 * mouthScale, 0.15 * Math.PI, 0.85 * Math.PI);
+        ctx.stroke();
+      } else if (mouthType === 'open-o') {
+        // Boca redonda para soplar gotas, nieve o vapor
+        ctx.fillStyle = '#d64d67';
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 24, 14 * mouthScale, 18 * mouthScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (mouthType === 'sleeping') {
+        // Sonrisa dormilona en calma
+        ctx.beginPath();
+        ctx.arc(cx, cy + 14, 16, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+      } else if (mouthType === 'shock') {
+        // Boca cómica abierta de asombro
+        ctx.fillStyle = '#b83b54';
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 28, 20 * mouthScale, 28 * mouthScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (mouthType === 'determined') {
+        // Ceño o mueca traviesa
+        ctx.beginPath();
+        ctx.moveTo(cx - 16, cy + 26);
+        ctx.quadraticCurveTo(cx, cy + 18, cx + 18, cy + 24);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // 1. Forma Normal de Nube (5-7 puffs coordinados)
+    function drawBasicCloud(x, y, scale, bounceY, rot, options, baseTone = '#e2ecf7') {
+      ctx.save();
+      ctx.translate(x, y + bounceY);
+      ctx.rotate(rot);
+      ctx.scale(scale, scale);
+
+      // Puffs traseros
+      drawVolumetricPuff(-90, 10, 68, baseTone);
+      drawVolumetricPuff(90, 10, 68, baseTone);
+      drawVolumetricPuff(-40, -45, 82, baseTone);
+      drawVolumetricPuff(45, -40, 78, baseTone);
+      // Puff central principal
+      drawVolumetricPuff(0, 5, 96, baseTone);
+
+      // Rostro
+      drawCartoonFace(0, 0, options);
+
+      ctx.restore();
+    }
+
+    // 2. Forma de Elefante de Nube (Nube 1 en 9.5s - 13.5s)
+    function drawCloudElephant(x, y, scale, t, baseTone = '#e2ecf7') {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      // Cola de nube esponjosa
+      const tailWag = Math.sin(t * 10) * 12;
+      drawVolumetricPuff(-180, 20 + tailWag, 36, baseTone);
+
+      // Cuerpo rechoncho
+      drawVolumetricPuff(-110, 40, 95, baseTone);
+      drawVolumetricPuff(-40, 50, 105, baseTone);
+      drawVolumetricPuff(-80, -30, 90, baseTone);
+
+      // Patas de nube gorditas
+      drawVolumetricPuff(-110, 130, 48, baseTone);
+      drawVolumetricPuff(-40, 135, 48, baseTone);
+      drawVolumetricPuff(50, 130, 48, baseTone);
+
+      // Cabeza
+      drawVolumetricPuff(60, -20, 115, baseTone);
+
+      // Gran oreja de elefante que aletea elásticamente
+      const earFlap = Math.sin(t * 7) * 20;
+      drawVolumetricPuff(-20 + earFlap * 0.5, -40, 85, baseTone);
+
+      // Ojo travieso del elefante
+      drawCartoonFace(65, -35, {
+        eyeLookX: 0.5,
+        eyeLookY: -0.2,
+        blink: false,
+        mouthType: 'open-o',
+        mouthScale: 0.8,
+        blush: true,
+        eyeDist: 28,
+        eyeSize: 14
+      });
+
+      // Trompa articulada de nube que sube y sopla
+      const trunkLift = Math.sin(t * 6) * 25;
+      const t1x = 140, t1y = 20;
+      const t2x = 180, t2y = -10 - trunkLift;
+      const t3x = 210, t3y = -60 - trunkLift * 1.5;
+
+      drawVolumetricPuff(t1x, t1y, 42, baseTone);
+      drawVolumetricPuff(t2x, t2y, 36, baseTone);
+      drawVolumetricPuff(t3x, t3y, 32, baseTone);
+
+      ctx.restore();
+    }
+
+    // 3. Forma de Pulpo Gigante de Nube (Nube 2 en 13.5s - 17.5s)
+    function drawCloudOctopus(x, y, scale, t, baseTone = '#e2f0fc') {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      // Cabeza / Manto bulboso gigante
+      const headSquash = 1 + Math.sin(t * 5) * 0.05;
+      ctx.save();
+      ctx.scale(1 / headSquash, headSquash);
+      drawVolumetricPuff(0, -90, 135, baseTone);
+      drawVolumetricPuff(-70, -60, 95, baseTone);
+      drawVolumetricPuff(70, -60, 95, baseTone);
+      drawVolumetricPuff(0, -10, 110, baseTone);
+      ctx.restore();
+
+      // Enormes ojos cómicos saltones
+      drawCartoonFace(0, -25, {
+        eyeLookX: Math.cos(t * 4) * 0.4 - 0.3,
+        eyeLookY: 0.3,
+        blink: (t % 4.0 < 0.25),
+        mouthType: 'shock',
+        mouthScale: 1.1,
+        blush: true,
+        eyeDist: 55,
+        eyeSize: 24
+      });
+
+      // 6 tentáculos ondulantes volumétricos con ventosas de nube
+      const tentacleAngles = [-1.4, -0.9, -0.4, 0.4, 0.9, 1.4];
+      tentacleAngles.forEach((baseAngle, idx) => {
+        const wave = Math.sin(t * 6 + idx * 1.2) * 35;
+        const len = 170;
+        const ax = Math.sin(baseAngle) * 70;
+        const ay = 60 + Math.cos(baseAngle) * 30;
+
+        const bx = ax + Math.sin(baseAngle) * len * 0.5 + wave;
+        const by = ay + len * 0.5;
+
+        const cx = bx + Math.sin(baseAngle) * len * 0.5 - wave * 0.8;
+        const cy = by + len * 0.5;
+
+        drawVolumetricPuff(ax, ay, 40, baseTone);
+        drawVolumetricPuff(bx, by, 32, baseTone);
+        drawVolumetricPuff(cx, cy, 26, baseTone);
+
+        // Pequeñas ventosas de pompón
+        drawVolumetricPuff(bx + 16, by - 6, 12, '#ffffff');
+        drawVolumetricPuff(cx + 14, cy - 6, 10, '#ffffff');
+      });
+
+      ctx.restore();
+    }
+
+    // 4. Forma de Dragón de Nube (Nube 1 en 17.5s - 20.8s)
+    function drawCloudDragon(x, y, scale, t, baseTone = '#e4effa') {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      // Cuerpo serpentino ondulante (5 segmentos)
+      for (let s = 4; s >= 0; s--) {
+        const segX = -s * 60 + Math.cos(t * 8 - s * 0.8) * 18;
+        const segY = Math.sin(t * 8 - s * 0.8) * 35 + s * 10;
+        drawVolumetricPuff(segX, segY, 60 - s * 4, baseTone);
+
+        // Cresta dorsal de nube
+        drawVolumetricPuff(segX, segY - 45, 20, '#ffffff');
+      }
+
+      // Alas de nube esponjosa que baten
+      const wingFlap = Math.sin(t * 12) * 35;
+      drawVolumetricPuff(-40, -90 + wingFlap, 50, '#ffffff');
+      drawVolumetricPuff(-90, -110 + wingFlap * 1.2, 38, '#ffffff');
+
+      // Cabeza majestuosa y cómica de dragón
+      const headX = 70, headY = -20;
+      drawVolumetricPuff(headX, headY, 75, baseTone);
+      drawVolumetricPuff(headX + 50, headY + 15, 52, baseTone); // Morro
+
+      // Cuernos de nube
+      drawVolumetricPuff(headX - 10, headY - 65, 26, '#ffffff');
+      drawVolumetricPuff(headX - 30, headY - 95, 18, '#ffffff');
+
+      // Bigotes / barbas chinas de nube
+      const whiskerWag = Math.sin(t * 10) * 12;
+      drawVolumetricPuff(headX + 75, headY + 30 + whiskerWag, 16, '#ffffff');
+
+      // Ojo astuto y alegre de dragón
+      drawCartoonFace(headX + 15, headY - 10, {
+        eyeLookX: 0.8,
+        eyeLookY: 0.1,
+        blink: (t % 3.5 < 0.2),
+        mouthType: 'determined',
+        mouthScale: 1.2,
+        blush: true,
+        eyeDist: 22,
+        eyeSize: 15
+      });
+
+      ctx.restore();
+    }
+
+    // 5. Forma de Dinosaurio de Nube (Nube 2 en 17.5s - 20.8s)
+    function drawCloudDinosaur(x, y, scale, t, baseTone = '#e2f4ed') {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      // Cola alegre de dinosaurio
+      const tailSwish = Math.sin(t * 9) * 25;
+      drawVolumetricPuff(180, 20 + tailSwish, 44, baseTone);
+      drawVolumetricPuff(130, 40 + tailSwish * 0.6, 60, baseTone);
+
+      // Gran barriga de T-Rex
+      drawVolumetricPuff(50, 45, 105, baseTone);
+      drawVolumetricPuff(-10, 40, 95, baseTone);
+
+      // Patas traseras fuertes
+      drawVolumetricPuff(40, 140, 52, baseTone);
+      drawVolumetricPuff(-20, 145, 52, baseTone);
+
+      // Cuello y cabeza
+      drawVolumetricPuff(-60, -30, 80, baseTone);
+      drawVolumetricPuff(-110, -50, 72, baseTone); // Morro cuadrado
+
+      // Brazitos diminutos cómicos de T-Rex
+      const armWag = Math.sin(t * 14) * 15;
+      drawVolumetricPuff(-40, 30 + armWag, 22, '#ffffff');
+      drawVolumetricPuff(-55, 38 + armWag, 16, '#ffffff');
+
+      // Ojos y dientes cómicos redondeados
+      drawCartoonFace(-75, -55, {
+        eyeLookX: -0.8,
+        eyeLookY: 0.2,
+        blink: (t % 3.8 < 0.2),
+        mouthType: 'smile',
+        mouthScale: 1.3,
+        blush: true,
+        eyeDist: 24,
+        eyeSize: 16
+      });
+
+      // Dientes esponjosos de nube
+      drawVolumetricPuff(-115, -35, 10, '#ffffff');
+      drawVolumetricPuff(-100, -35, 10, '#ffffff');
+
+      ctx.restore();
+    }
+
+    // --- GRAN ARCOÍRIS LUMINOSO (20.8s - 25.0s) ---
+    function drawRainbow(cycleTime) {
+      if (cycleTime < 20.7) return;
+
+      const progress = Math.min(1.0, (cycleTime - 20.7) / 1.5);
+      const fadeOut = cycleTime > 23.5 ? Math.max(0, 1.0 - (cycleTime - 23.5) / 1.5) : 1.0;
+      const alpha = progress * fadeOut * 0.88;
+
+      if (alpha <= 0) return;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      const rainbowColors = [
+        'rgba(255, 59, 48, 0.75)',   // Rojo
+        'rgba(255, 149, 0, 0.75)',  // Naranja
+        'rgba(255, 204, 0, 0.75)',  // Amarillo
+        'rgba(52, 199, 89, 0.75)',   // Verde
+        'rgba(0, 199, 190, 0.75)',  // Cyan
+        'rgba(0, 122, 255, 0.75)',  // Azul
+        'rgba(175, 82, 222, 0.75)'  // Violeta
+      ];
+
+      const centerX = WIDTH * 0.5;
+      const centerY = HEIGHT * 0.88;
+      const baseRadius = 680;
+      const bandWidth = 26;
+
+      ctx.lineWidth = bandWidth;
+      ctx.lineCap = 'round';
+
+      // Resplandor difuso del arcoíris
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+      ctx.shadowBlur = 35;
+
+      rainbowColors.forEach((color, i) => {
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        const r = baseRadius - i * (bandWidth - 2);
+        // Expansión del arco hacia ambos lados
+        const arcSpread = Math.PI * progress;
+        const startA = Math.PI + (Math.PI - arcSpread) * 0.5;
+        const endA = startA + arcSpread;
+
+        ctx.arc(centerX, centerY, r, startA, endA);
+        ctx.stroke();
+      });
+
+      ctx.restore();
+    }
+
+    // --- DIBUJADO DE TODAS LAS PARTÍCULAS ---
+    function drawParticles() {
+      // 1. Gotas de lluvia
+      ctx.save();
+      ctx.strokeStyle = '#64b5f6';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      rainParticles.forEach(p => {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - p.vx * 1.5, p.y - p.vy * 1.5);
+        ctx.stroke();
+
+        // Brillo de gota
+        ctx.fillStyle = '#e3f2fd';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+
+      // 2. Copos de nieve estrellados
+      ctx.save();
+      snowParticles.forEach(s => {
+        ctx.save();
+        ctx.translate(s.x, s.y);
+        ctx.rotate(s.rot);
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#b3e5fc';
+        ctx.lineWidth = 2;
+
+        // Copo cartoon de 6 puntas
+        for (let k = 0; k < 3; k++) {
+          ctx.beginPath();
+          ctx.moveTo(-s.size, 0);
+          ctx.lineTo(s.size, 0);
+          ctx.stroke();
+          ctx.rotate(Math.PI / 3);
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, s.size * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+      ctx.restore();
+
+      // 3. Vapor de elefante
+      ctx.save();
+      steamParticles.forEach(st => {
+        ctx.fillStyle = `rgba(255, 255, 255, ${st.alpha * 0.7})`;
+        ctx.strokeStyle = `rgba(210, 235, 255, ${st.alpha * 0.9})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      // 4. Confeti multicolor giratorio en 3D
+      ctx.save();
+      confettiParticles.forEach(c => {
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.rotate(c.rotZ);
+        ctx.scale(Math.cos(c.rotX), Math.sin(c.rotY));
+        ctx.fillStyle = c.color;
+        ctx.globalAlpha = Math.min(1.0, c.life * 1.4);
+        ctx.fillRect(-c.w * 0.5, -c.h * 0.5, c.w, c.h);
+        ctx.restore();
+      });
+      ctx.restore();
+
+      // 5. Zetas de sueño
+      ctx.save();
+      sleepParticles.forEach(z => {
+        ctx.fillStyle = `rgba(255, 255, 255, ${z.alpha * 0.85})`;
+        ctx.strokeStyle = `rgba(140, 180, 230, ${z.alpha * 0.6})`;
+        ctx.lineWidth = 2;
+        ctx.font = `bold ${Math.round(36 * z.scale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Z', z.x, z.y);
+        ctx.strokeText('Z', z.x, z.y);
+      });
+      ctx.restore();
+    }
+
+    // --- BUCLE PRINCIPAL DE ANIMACIÓN Y COREOGRAFÍA ---
+    let lastTimestamp = performance.now();
+
+    function render(timestamp) {
+      if (!startTime) startTime = timestamp;
+      const dt = Math.min(0.1, (timestamp - lastTimestamp) / 1000.0);
+      lastTimestamp = timestamp;
+
+      animTime = (timestamp - startTime) / 1000.0;
+      const cycleTime = animTime % TOTAL_DURATION;
+
+      // Sincronizar bucle musical
+      checkAudioLoop(animTime);
+
+      // Actualizar partículas
+      updateParticles(animTime, dt);
+
+      // Limpiar y dibujar fondo
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      drawSkyAndMountains(animTime);
+
+      // Dibujar arcoíris en la fase correspondiente
+      drawRainbow(cycleTime);
+
+      // COREOGRAFÍA DE LAS ACCIONES (0 a 25 segundos)
+      // Posiciones base de flotación
+      const baseNube1X = 540;
+      const baseNube2X = 1380;
+      const baseNubeY = 400;
+
+      // Balanceo elástico sutil permanente
+      const float1 = Math.sin(animTime * 2.5) * 16;
+      const float2 = Math.cos(animTime * 2.2) * 18;
+
+      if (cycleTime < 3.5) {
+        // ACCIÓN 1: (0.0s - 3.5s) Dos pequeñas nubes flotan tranquilamente
+        drawBasicCloud(baseNube1X, baseNubeY, 1.0, float1, Math.sin(animTime * 1.8) * 0.05, {
+          eyeLookX: 0.6,
+          eyeLookY: 0.0,
+          blink: (cycleTime % 3.0 < 0.2),
+          mouthType: 'smile',
+          blush: true
+        });
+
+        drawBasicCloud(baseNube2X, baseNubeY, 1.0, float2, -Math.sin(animTime * 1.6) * 0.05, {
+          eyeLookX: -0.6,
+          eyeLookY: 0.0,
+          blink: (cycleTime % 2.8 < 0.2),
+          mouthType: 'smile',
+          blush: true
+        }, '#e2f0fc');
+
+      } else if (cycleTime < 6.5) {
+        // ACCIÓN 2: (3.5s - 6.5s) Nube 1 lanza gotas de lluvia; Nube 2 se sacude sorprendida
+        const lean1 = Math.sin((cycleTime - 3.5) * 4) * 0.12 + 0.1;
+        drawBasicCloud(baseNube1X + 40, baseNubeY, 1.05, float1, lean1, {
+          eyeLookX: 0.9,
+          eyeLookY: 0.2,
+          blink: false,
+          mouthType: 'open-o',
+          mouthScale: 1.1,
+          blush: true
+        });
+
+        // Nube 2 reacciona salpicada y tiembla cómicamente
+        const shiver = (cycleTime > 4.2) ? Math.sin(animTime * 45) * 8 : 0;
+        drawBasicCloud(baseNube2X + shiver, baseNubeY, 0.95, float2, -0.15, {
+          eyeLookX: -0.9,
+          eyeLookY: -0.3,
+          blink: (cycleTime > 4.2 && cycleTime % 0.4 < 0.2),
+          mouthType: 'shock',
+          mouthScale: 0.9,
+          blush: true
+        }, '#dce8f5');
+
+      } else if (cycleTime < 9.5) {
+        // ACCIÓN 3: (6.5s - 9.5s) Nube 2 responde con copos de nieve; Nube 1 estornuda
+        const lean2 = -0.18;
+        drawBasicCloud(baseNube2X - 50, baseNubeY, 1.1, float2, lean2, {
+          eyeLookX: -0.9,
+          eyeLookY: 0.1,
+          blink: false,
+          mouthType: 'open-o',
+          mouthScale: 1.2,
+          blush: true
+        }, '#d8ecfa');
+
+        // Nube 1 se encoge con frío y estornuda cómicamente
+        const freezeWobble = (cycleTime > 7.2) ? Math.sin(animTime * 38) * 7 : 0;
+        drawBasicCloud(baseNube1X + freezeWobble, baseNubeY, 0.92, float1, 0.1, {
+          eyeLookX: 0.5,
+          eyeLookY: 0.4,
+          blink: (cycleTime > 7.2 && cycleTime % 0.5 < 0.25),
+          mouthType: 'determined',
+          blush: true
+        });
+
+      } else if (cycleTime < 13.5) {
+        // ACCIÓN 4: (9.5s - 13.5s) Transformación 1: Elefante que lanza vapor
+        const morphProg = Math.min(1.0, (cycleTime - 9.5) / 1.0);
+        const elephantScale = 0.4 + morphProg * 0.9;
+        drawCloudElephant(baseNube1X - 60, baseNubeY - 30, elephantScale, animTime);
+
+        // Nube 2 observa boquiabierta y asombrada
+        drawBasicCloud(baseNube2X + 60, baseNubeY, 0.95, float2, -0.2, {
+          eyeLookX: -0.95,
+          eyeLookY: -0.2,
+          blink: false,
+          mouthType: 'shock',
+          mouthScale: 1.4,
+          blush: true
+        }, '#e2f0fc');
+
+      } else if (cycleTime < 17.5) {
+        // ACCIÓN 5: (13.5s - 17.5s) Transformación 2: Pulpo gigante que agita sus tentáculos
+        const morphProg2 = Math.min(1.0, (cycleTime - 13.5) / 1.0);
+        const octoScale = 0.4 + morphProg2 * 0.85;
+
+        // Nube 1 sigue en elefante pero mira asombrada al pulpo
+        drawCloudElephant(baseNube1X - 70, baseNubeY - 20, 1.15, animTime);
+
+        // Pulpo gigante
+        drawCloudOctopus(baseNube2X + 20, baseNubeY - 40, octoScale, animTime);
+
+      } else if (cycleTime < 20.8) {
+        // ACCIÓN 6: (17.5s - 20.8s) Dragón de nube y Dinosaurio
+        const morphProg3 = Math.min(1.0, (cycleTime - 17.5) / 0.8);
+        const dragScale = 0.5 + morphProg3 * 0.75;
+        const dinoScale = 0.5 + morphProg3 * 0.75;
+
+        // Acercándose para el choque
+        const chargeProgress = Math.max(0, (cycleTime - 19.5) / 1.3);
+        const dragX = (baseNube1X - 30) + chargeProgress * 300;
+        const dinoX = (baseNube2X + 30) - chargeProgress * 300;
+
+        drawCloudDragon(dragX, baseNubeY - 30, dragScale, animTime);
+        drawCloudDinosaur(dinoX, baseNubeY - 20, dinoScale, animTime);
+
+      } else if (cycleTime < 22.5) {
+        // ACCIÓN 7: (20.8s - 22.5s) Choque suave, aplastamiento elástico y explosión
+        const impactTime = cycleTime - 20.8;
+        if (impactTime < 0.3) {
+          // Aplastamiento elástico contra el centro
+          const squashX = 1.0 + impactTime * 2.2;
+          const squashY = 1.0 - impactTime * 1.5;
+          ctx.save();
+          ctx.translate(WIDTH * 0.5, baseNubeY);
+          ctx.scale(squashX, squashY);
+          drawVolumetricPuff(-40, 0, 110, '#ffffff');
+          drawVolumetricPuff(40, 0, 110, '#f0f8ff');
+          drawVolumetricPuff(0, -30, 95, '#ffffff');
+          ctx.restore();
+        } else {
+          // Destello central que se disipa rápidamente revelando el arcoíris y confeti
+          const flashAlpha = Math.max(0, 1.0 - (impactTime - 0.3) * 2.5);
+          if (flashAlpha > 0) {
+            ctx.save();
+            ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha * 0.85})`;
+            ctx.beginPath();
+            ctx.arc(WIDTH * 0.5, baseNubeY, 260, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
+      } else {
+        // ACCIÓN 8: (22.5s - 25.0s) Vuelta al tamaño original y se quedan dormidas juntas
+        const calmProg = Math.min(1.0, (cycleTime - 22.5) / 1.0);
+        // Desplazamiento suave hasta el centro
+        const sleepNube1X = (baseNube1X + 240) + Math.sin(animTime * 1.5) * 8;
+        const sleepNube2X = (baseNube2X - 240) - Math.sin(animTime * 1.5) * 8;
+        const cuddleNudge = Math.sin(animTime * 2) * 6;
+
+        // Respiración tranquila y dulce
+        const breath = 1.0 + Math.sin(animTime * 3) * 0.04;
+
+        // Nube 1 acurrucada
+        drawBasicCloud(sleepNube1X + 40 + cuddleNudge, baseNubeY + 15, 0.88 * breath, float1 * 0.5, 0.08, {
+          eyeLookX: 0,
+          eyeLookY: 0,
+          blink: true, // Ojos cerrados dormidos
+          mouthType: 'sleeping',
+          blush: true
+        });
+
+        // Nube 2 apoyando su cabeza sobre Nube 1
+        drawBasicCloud(sleepNube2X - 40 - cuddleNudge, baseNubeY + 20, 0.88 * breath, float2 * 0.5, -0.08, {
+          eyeLookX: 0,
+          eyeLookY: 0,
+          blink: true, // Ojos cerrados dormidos
+          mouthType: 'sleeping',
+          blush: true
+        }, '#e2f0fc');
+      }
+
+      // Dibujar todas las partículas activas encima
+      drawParticles();
+
+      requestAnimationFrame(render);
+    }
+
+    // Iniciar bucle gráfico
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>
