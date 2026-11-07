@@ -80,6 +80,7 @@
     // Instrumento: Xilófono / Marimba cómico
     function playMarimba(freq, time, duration = 0.22, vol = 0.3) {
       if (!audioCtx || audioCtx.state !== 'running') return;
+      if (time < audioCtx.currentTime - 0.02) return;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       const osc2 = audioCtx.createOscillator();
@@ -112,6 +113,7 @@
     // Instrumento: Bajo Pizzicato / Fagot juguetón
     function playPizz(freq, time, duration = 0.28, vol = 0.4) {
       if (!audioCtx || audioCtx.state !== 'running') return;
+      if (time < audioCtx.currentTime - 0.02) return;
       const osc = audioCtx.createOscillator();
       const filter = audioCtx.createBiquadFilter();
       const gain = audioCtx.createGain();
@@ -137,6 +139,7 @@
     // Instrumento: Tuba / Metal de farsa cómica
     function playBrass(freq, time, duration = 0.45, vol = 0.35) {
       if (!audioCtx || audioCtx.state !== 'running') return;
+      if (time < audioCtx.currentTime - 0.02) return;
       const osc = audioCtx.createOscillator();
       const filter = audioCtx.createBiquadFilter();
       const gain = audioCtx.createGain();
@@ -168,6 +171,7 @@
     // Efecto cómico: Gota de agua (Plink)
     function playWaterDrop(time) {
       if (!audioCtx || audioCtx.state !== 'running') return;
+      if (time < audioCtx.currentTime - 0.02) return;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
@@ -187,6 +191,7 @@
     // Efecto cómico: Copos mágicos / Campana
     function playIceChime(freq, time) {
       if (!audioCtx || audioCtx.state !== 'running') return;
+      if (time < audioCtx.currentTime - 0.02) return;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
@@ -202,6 +207,7 @@
     // Efecto cómico: Resoplido de vapor de elefante
     function playSteamPuff(time) {
       if (!audioCtx || audioCtx.state !== 'running') return;
+      if (time < audioCtx.currentTime - 0.02) return;
       const bufferSize = audioCtx.sampleRate * 0.45;
       const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
       const data = buffer.getChannelData(0);
@@ -232,6 +238,7 @@
     // Efecto cómico: Choque suave elástico y explosión de confeti
     function playSoftCollisionExplosion(time) {
       if (!audioCtx || audioCtx.state !== 'running') return;
+      if (time < audioCtx.currentTime - 0.02) return;
       // Boing elástico
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
@@ -258,6 +265,7 @@
     // Efecto de Nana de caja de música al final
     function playMusicBox(freq, time) {
       if (!audioCtx || audioCtx.state !== 'running') return;
+      if (time < audioCtx.currentTime - 0.02) return;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
@@ -371,7 +379,7 @@
 
     let lastCycleIndex = -1;
     function checkAudioLoop(t) {
-      if (!audioCtx) return;
+      if (!audioCtx || audioCtx.state !== 'running') return;
       const currentCycle = Math.floor(t / TOTAL_DURATION);
       if (currentCycle !== lastCycleIndex) {
         lastCycleIndex = currentCycle;
